@@ -1,0 +1,512 @@
+<!-- ===== Petrol Retail Outlet (RO) — CA (Customer Attendant) app ===== -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>RO — CA Login</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Manrope:wght@600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  :root{--brand:#23282f;--brand-d:#14171c;--accent:#f5a623;--accent-d:#e0890c;--steel:#3b6ea5;--ink:#1d2126;--muted:#7b8089;
+    --line:#e7e2d9;--bg:#f2efe9;--card:#ffffff;--good:#1f9d57;--bad:#d1495b;--soft:#f7f3ec;--radius:16px;--shadow:0 6px 22px rgba(28,25,20,.10),0 1px 3px rgba(28,25,20,.06)}
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;background:var(--bg);color:var(--ink);font-size:15px;line-height:1.45;padding-bottom:120px}
+  header.app{background:linear-gradient(135deg,var(--brand),var(--brand-d));color:#fff;padding:14px 16px;position:sticky;top:0;z-index:20;display:flex;justify-content:space-between;align-items:center}
+  header.app .nm{font-size:16px;font-weight:800}
+  header.app .sub{font-size:11px;opacity:.85}
+  header.app .who{font-size:11px;text-align:right;opacity:.95}
+  .wrap{max-width:760px;margin:0 auto;padding:14px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);margin:14px 0;overflow:hidden}
+  .card>h2{margin:0;font-size:14px;letter-spacing:.4px;text-transform:uppercase;color:#fff;background:var(--brand);padding:10px 14px;display:flex;align-items:center;gap:8px}
+  .card>h2 .n{background:var(--accent);color:#3a2a00;width:22px;height:22px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:700}
+  .body{padding:14px}
+  label{display:block;font-size:12px;color:var(--muted);margin:0 0 4px;font-weight:600}
+  input,select{width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:10px;font-size:16px;background:#fff;color:var(--ink);font-family:inherit}
+  input[readonly]{background:var(--soft);font-weight:700}
+  .grid{display:grid;gap:12px}.g2{grid-template-columns:1fr 1fr}@media(max-width:480px){.g2{grid-template-columns:1fr}}
+  .hint{font-size:12px;color:var(--muted)}
+  .btn{width:100%;border:none;border-radius:12px;padding:14px;font-size:15px;font-weight:800;cursor:pointer;background:var(--accent);color:#3a2a00}
+  .btn.sec{background:#fff;border:1.5px solid var(--brand);color:var(--brand)}
+  .btn:disabled{opacity:.5}
+  /* login screen */
+  .loginwrap{min-height:72vh;display:flex;align-items:center;justify-content:center;padding:16px}
+  .loginbox{max-width:380px;width:100%;text-align:center}
+  .loginbox h1{font-size:30px;margin:0 0 4px;color:var(--brand)}
+  .loginbox p{margin:0 0 18px;color:var(--muted)}
+  .loginbox .card .body{padding:18px}
+  .err{color:var(--bad);font-size:13px;font-weight:600;margin-top:8px;min-height:16px}
+  /* mode chooser */
+  .modegrid{display:grid;grid-template-columns:1fr 1fr;gap:12px}@media(max-width:480px){.modegrid{grid-template-columns:1fr}}
+  .modebtn{border:2px solid var(--line);border-radius:14px;padding:18px;text-align:center;cursor:pointer;background:#fff;font-family:inherit}
+  .modebtn .ic{font-size:30px}.modebtn b{display:block;font-size:17px;margin-top:6px}.modebtn span{font-size:12px;color:var(--muted)}
+  .modebtn.sel{border-color:var(--brand);background:#e9f6ef}
+  /* nozzle */
+  .nozzle{border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:12px;background:var(--soft)}
+  .nozzle .code{font-weight:700;color:var(--brand);font-size:13px;margin-bottom:8px}
+  .scanrow{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:10px}
+  .scanbtn{flex:1 1 auto;border:1.5px solid var(--brand);background:#fff;color:var(--brand);border-radius:10px;padding:11px;font-size:13px;font-weight:700;cursor:pointer}
+  .scanbtn:disabled{opacity:.55}
+  .scanmsg{flex-basis:100%;font-size:11.5px;color:var(--muted);margin-top:2px;min-height:14px}
+  .scanmsg.busy{color:var(--brand)}.scanmsg.okk{color:var(--good)}.scanmsg.errr{color:var(--bad)}
+  .pillrow{display:flex;gap:10px;margin-top:10px;border-top:1px dashed var(--line);padding-top:10px}
+  .pill{background:#fff;border:1px solid var(--line);border-radius:9px;padding:6px 10px;font-size:12px;flex:1}
+  .pill b{display:block;font-size:15px}.pill span{color:var(--muted)}
+  .ewarn{color:var(--bad);font-size:12px;font-weight:600;margin-top:6px;min-height:14px}
+  .vgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px}@media(max-width:480px){.vgrid{grid-template-columns:1fr}}
+  .vbtn{text-align:left;border-radius:12px;padding:14px;cursor:pointer;background:#fff;font-family:inherit}
+  .vbtn b{display:block;font-size:15px;margin-bottom:3px}.vbtn span{font-size:12px;color:var(--muted);font-weight:400}
+  .vyes{border:2px solid var(--good);color:var(--good)}.vno{border:2px solid var(--bad);color:var(--bad)}
+  .vbtn.sel.vyes{background:#e6f7ec}.vbtn.sel.vno{background:#fdecea}.vbtn:not(.sel){opacity:.7}
+  .submitbar{position:fixed;left:0;right:0;bottom:0;background:#fff;border-top:1px solid var(--line);padding:12px 14px;z-index:30;display:none}
+  .submitbar.show{display:block}.submitbar .inner{max-width:760px;margin:0 auto}
+  .hide{display:none!important}
+  /* cropper */
+  .cropmodal{position:fixed;inset:0;background:rgba(8,20,15,.92);display:none;flex-direction:column;align-items:center;justify-content:center;z-index:60;padding:12px}
+  .cropmodal.open{display:flex}
+  .crophead{color:#fff;font-size:13px;margin-bottom:10px;text-align:center;max-width:92%}
+  .cropstage{position:relative;touch-action:none;border:1px solid rgba(255,255,255,.3);background:#000;max-width:100%;overflow:hidden}
+  .cropstage img{display:block;pointer-events:none;user-select:none}
+  .cropbox{position:absolute;border:2px solid var(--accent);box-shadow:0 0 0 9999px rgba(0,0,0,.5);box-sizing:border-box;touch-action:none;cursor:move}
+  .crophandle{position:absolute;right:-12px;bottom:-12px;width:24px;height:24px;background:var(--accent);border:2px solid #fff;border-radius:50%;touch-action:none}
+  .cropbtns{display:flex;gap:10px;margin-top:14px;flex-wrap:wrap;justify-content:center;position:relative;z-index:2}
+  .cropbtns button{padding:12px 18px;border-radius:10px;border:none;font-weight:700;font-size:14px;cursor:pointer}
+  .ok{background:var(--good);color:#fff}.ghost{background:#eee}
+  .modal{position:fixed;inset:0;background:rgba(10,25,20,.55);display:none;align-items:center;justify-content:center;z-index:50;padding:16px}
+  .modal.open{display:flex}.modal .box{background:#fff;border-radius:16px;max-width:460px;width:100%}
+  .modal h3{margin:0;padding:16px;background:var(--brand);color:#fff;border-radius:16px 16px 0 0}
+  .modal .c{padding:16px}.modal .a{padding:0 16px 16px}.modal .a button{width:100%;padding:12px;border:none;border-radius:10px;font-weight:700;background:var(--good);color:#fff}
+  .spin{display:inline-block;width:15px;height:15px;border:2px solid rgba(0,0,0,.2);border-top-color:#3a2a00;border-radius:50%;animation:sp .7s linear infinite;vertical-align:-2px}
+  @keyframes sp{to{transform:rotate(360deg)}}
+
+  /* ============ PREMIUM · Warm Industrial ============ */
+  body{font-family:'Inter',-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+    background:radial-gradient(1100px 460px at 100% -8%, #efe7da 0%, rgba(239,231,218,0) 60%), var(--bg)}
+  h1,h2,.card>h2,.nm,.loginbox h1,.pill b,.vbtn b{font-family:'Manrope','Inter',sans-serif}
+  header.app{background:linear-gradient(120deg,#23282f,#14171c);border-bottom:2px solid var(--accent);box-shadow:0 6px 22px rgba(0,0,0,.20)}
+  header.app .nm{letter-spacing:.3px}
+  header.app .nm::before{content:"⛽ "}
+  .card{border:1px solid var(--line);box-shadow:var(--shadow)}
+  .card>h2{background:linear-gradient(120deg,#23282f,#14171c);letter-spacing:.4px}
+  .card>h2 .n{background:var(--accent);color:#241a02}
+  .btn{background:linear-gradient(180deg,#f7b441,var(--accent-d));color:#241a02;box-shadow:0 6px 16px rgba(245,166,35,.35);transition:transform .12s, box-shadow .12s}
+  .btn:hover{transform:translateY(-1px);box-shadow:0 9px 22px rgba(245,166,35,.45)}
+  .btn:active{transform:translateY(0)}
+  .btn.sec{background:#fff;border:1.5px solid var(--line);color:var(--ink)}
+  .btn.sec:hover{border-color:var(--accent);color:var(--accent-d)}
+  input:focus,select:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(245,166,35,.20)}
+  .modebtn{transition:.15s}
+  .modebtn.sel{border-color:var(--accent);background:#fff7ea}
+  .nozzle{background:linear-gradient(180deg,#fff,#faf6ef);border-radius:14px}
+  .scanbtn{border-color:var(--line);transition:.15s}
+  .scanbtn:hover{border-color:var(--accent);color:var(--accent-d)}
+  .pillrow .pill{border-radius:11px}
+  .submitbar{box-shadow:0 -8px 24px rgba(0,0,0,.10)}
+  .vbtn{border-radius:12px}
+  *::-webkit-scrollbar{height:10px;width:10px}*::-webkit-scrollbar-thumb{background:#cdc4b5;border-radius:8px}*::-webkit-scrollbar-track{background:transparent}
+  /* live camera with fixed orange guide box */
+  .livemodal{position:fixed;inset:0;background:#000;display:none;flex-direction:column;align-items:center;justify-content:center;z-index:65;padding:10px}
+  .livemodal.open{display:flex}
+  .livehead{color:#fff;font-size:13.5px;margin-bottom:8px;text-align:center;max-width:94%}
+  .livestage{position:relative;width:100%;max-width:560px;display:flex;align-items:center;justify-content:center;background:#000;border-radius:10px;overflow:hidden}
+  .livestage video{width:100%;height:auto;display:block;max-height:72vh}
+  .livebox{position:absolute;left:7%;top:39%;width:86%;height:22%;border:3px solid var(--accent);border-radius:8px;box-shadow:0 0 0 2px rgba(0,0,0,.45),0 0 18px rgba(245,166,35,.55);pointer-events:none}
+  .livebox::after{content:"V";position:absolute;left:6px;top:-22px;color:var(--accent);font-weight:800;font-size:13px;text-shadow:0 1px 3px #000}
+  .livehint{position:absolute;left:0;right:0;bottom:8px;text-align:center;color:#fff;font-size:11px;opacity:.85;text-shadow:0 1px 3px #000}
+  .livebtns{display:flex;gap:10px;margin-top:14px;flex-wrap:wrap;justify-content:center}
+  .livebtns button{padding:13px 20px;border-radius:10px;border:none;font-weight:800;font-size:14px;cursor:pointer}
+  .livebtns .ok{background:var(--good);color:#fff}.livebtns .ghost{background:#2a2f36;color:#fff}
+</style>
+</head>
+<body>
+<header class="app">
+  <div><div class="nm">Petrol Retail Outlet (RO)</div><div class="sub">Customer Attendant</div></div>
+  <div class="who" id="who"></div>
+</header>
+
+<!-- LOGIN -->
+<div id="loginScreen" class="loginwrap">
+  <div class="loginbox">
+    <h1>Welcome</h1>
+    <p>Sign in to record your meter readings</p>
+    <div class="card"><div class="body">
+      <div style="text-align:left">
+        <label>Username</label><input id="u" autocapitalize="off" autocorrect="off" placeholder="e.g. aisha">
+        <div style="height:10px"></div>
+        <label>Password</label><input id="p" type="password" placeholder="••••">
+      </div>
+      <div style="height:14px"></div>
+      <button class="btn" id="loginBtn">Log in</button>
+      <div class="err" id="loginErr"></div>
+    </div></div>
+  </div>
+</div>
+
+<!-- APP (after login) -->
+<div id="app" class="wrap hide">
+
+  <section class="card" id="shiftCard">
+    <h2><span class="n">1</span> Your Shift (set by supervisor)</h2>
+    <div class="body">
+      <div id="noAlloc" class="hint hide" style="color:var(--bad);font-weight:600"></div>
+      <div id="allocBox" class="grid g2 hide">
+        <div><label>Date</label><input id="date" readonly></div>
+        <div><label>Shift</label><input id="shift" readonly></div>
+        <div><label>Dispensing Unit</label><input id="du" readonly></div>
+        <div><label>Shift Leader</label><input id="leader" readonly></div>
+        <div><label>CA Name</label><input id="caName" readonly></div>
+        <div style="grid-column:1/-1"><label>Your Nozzles</label><input id="nozSummary" readonly></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="card hide" id="modeCard">
+    <h2><span class="n">2</span> What are you doing now?</h2>
+    <div class="body"><div class="modegrid">
+      <button type="button" class="modebtn" id="mOpen"><span class="ic">🌅</span><b>OPENING</b><span>Morning — photograph opening meters</span></button>
+      <button type="button" class="modebtn" id="mClose"><span class="ic">🌙</span><b>CLOSING</b><span>Evening — photograph closing meters</span></button>
+    </div></div>
+  </section>
+
+  <section class="card hide" id="openCard">
+    <h2><span class="n">3</span> Opening Readings</h2>
+    <div class="body">
+      <div class="hint" style="margin-bottom:8px">Photograph each meter, crop to the <b>V</b> line, Read. The value is filled and <b>locked</b>.</div>
+      <div id="openNozzles"></div>
+    </div>
+  </section>
+
+  <section class="card hide" id="closeCard">
+    <h2><span class="n">3</span> Closing Readings</h2>
+    <div class="body">
+      <button type="button" class="btn sec" id="loadOpen">🔄 Load my opening readings</button>
+      <div id="closeMsg" class="hint" style="margin-top:8px"></div>
+      <div id="closeNozzles" style="margin-top:10px"></div>
+    </div>
+  </section>
+
+  <section class="card hide" id="verifyCard">
+    <h2><span class="n">4</span> Verification</h2>
+    <div class="body">
+      <p class="hint" style="margin:0 0 12px">Confirm your closing readings are correct.</p>
+      <div class="vgrid">
+        <button type="button" class="vbtn vyes" id="vYes"><b>&#10003; Verified</b><span>Readings are correct</span></button>
+        <button type="button" class="vbtn vno" id="vNo"><b>&#10007; Not verified</b><span>Hold &amp; review</span></button>
+      </div>
+      <div class="hint" id="vHint" style="font-weight:700;margin-top:10px">Tap a button to confirm.</div>
+    </div>
+  </section>
+
+  <div id="formErr" class="err" style="text-align:center"></div>
+</div>
+
+<div class="submitbar" id="submitbar"><div class="inner"><button class="btn" id="submitBtn">Submit</button></div></div>
+
+<div class="cropmodal" id="cropModal">
+  <div class="crophead">Drag the orange box onto the <b>V</b> (litre) line · drag the corner to resize</div>
+  <div class="cropstage" id="cropStage"><img id="cropImg" alt=""><div class="cropbox" id="cropBox"><div class="crophandle"></div></div></div>
+  <div class="cropbtns"><button id="cropCancel" class="ghost">Cancel</button><button id="cropFull" class="ghost">Whole photo</button><button id="cropRead" class="ok">Read this</button></div>
+</div>
+<div class="livemodal" id="liveModal">
+  <div class="livehead">Place the <b>V</b> (litre) reading inside the orange box, then tap <b>Capture</b></div>
+  <div class="livestage" id="liveStage">
+    <video id="liveVideo" autoplay playsinline muted></video>
+    <div class="livebox"></div>
+    <div class="livehint">Hold steady · fill the box with the V line</div>
+  </div>
+  <div class="livebtns">
+    <button class="ghost" id="liveCancel">Cancel</button>
+    <button class="ghost" id="liveSwitch">Flip cam</button>
+    <button class="ok" id="liveCapture">Capture</button>
+  </div>
+</div>
+<div class="modal" id="modal"><div class="box"><h3 id="mTitle">Done</h3><div class="c" id="mBody"></div><div class="a"><button id="mOk">OK</button></div></div></div>
+
+<script>
+var WEB_APP_URL="https://script.google.com/macros/s/AKfycbxtlsiv4upVm05ovhOA2Uzoc5ctnDG7SuQij91AkBLj7x3aiz-Z74zdTtcq902b1Vsm/exec";
+var OCR_SPACE_KEY="K84802403888957";
+function $(id){return document.getElementById(id);}
+function call(action,data){var pl={action:action};if(data)for(var k in data)pl[k]=data[k];
+  return fetch(WEB_APP_URL,{method:"POST",body:JSON.stringify(pl)}).then(function(r){return r.json();});}
+function num(n){return (Number(n)||0).toLocaleString("en-IN",{minimumFractionDigits:2,maximumFractionDigits:2});}
+function today(){var d=new Date(),p=function(x){return String(x).padStart(2,"0");};return d.getFullYear()+"-"+p(d.getMonth()+1)+"-"+p(d.getDate());}
+function prodName(p){return p==="MS"?"Petrol":(p==="HS"?"Diesel (HSD)":(p==="CNG"?"CNG":p));}
+function showModal(t,h){$("mTitle").textContent=t;$("mBody").innerHTML=h;$("modal").classList.add("open");}
+$("mOk").onclick=function(){$("modal").classList.remove("open");};
+
+/* ---------- MeterOCR (OCR.space Engine 2) ---------- */
+var MeterOCR=(function(){
+  function preprocess(img,rect){var sx,sy,sw,sh;
+    if(rect&&rect.w>8&&rect.h>8){sx=rect.x;sy=rect.y;sw=rect.w;sh=rect.h;}else{sx=0;sy=0;sw=img.naturalWidth;sh=img.naturalHeight;}
+    var scale=160/sh;if(scale<0.4)scale=0.4;if(scale>5)scale=5;if(sw*scale>1200)scale=1200/sw;
+    var W=Math.max(8,Math.round(sw*scale)),H=Math.max(8,Math.round(sh*scale));
+    var c=document.createElement("canvas");c.width=W;c.height=H;var ctx=c.getContext("2d");
+    ctx.imageSmoothingEnabled=true;ctx.imageSmoothingQuality="high";ctx.fillStyle="#fff";ctx.fillRect(0,0,W,H);
+    ctx.drawImage(img,sx,sy,sw,sh,0,0,W,H);
+    var im=ctx.getImageData(0,0,W,H),d=im.data,n=W*H,lum=new Float32Array(n);
+    for(var i=0,j=0;j<n;i+=4,j++){lum[j]=0.299*d[i]+0.587*d[i+1]+0.114*d[i+2];}
+    var srt=Float32Array.from(lum);srt.sort(function(a,b){return a-b;});
+    var lo=srt[Math.floor(n*0.05)],hi=srt[Math.floor(n*0.95)];if(hi-lo<1){lo=0;hi=255;}
+    for(var i2=0,j2=0;j2<n;i2+=4,j2++){var v=(lum[j2]-lo)/(hi-lo)*255;if(v<0)v=0;if(v>255)v=255;d[i2]=d[i2+1]=d[i2+2]=v;}
+    ctx.putImageData(im,0,0);return c.toDataURL("image/png");}
+  function ocr(b64,key){var fd=new FormData();fd.append("base64Image",b64);fd.append("OCREngine","2");fd.append("scale","true");
+    fd.append("isOverlayRequired","false");fd.append("detectOrientation","false");fd.append("language","eng");
+    return fetch("https://api.ocr.space/parse/image",{method:"POST",headers:{apikey:key||"helloworld"},body:fd})
+      .then(function(r){return r.json();}).then(function(j){if(j&&j.IsErroredOnProcessing)throw new Error((j.ErrorMessage&&j.ErrorMessage[0])||"OCR error");
+      return (j&&j.ParsedResults&&j.ParsedResults[0]&&j.ParsedResults[0].ParsedText)||"";});}
+  function parseV(txt){if(!txt)return "";var raw=String(txt);var vi=raw.search(/[Vv]\s*[:\.]/);var scope=vi>=0?raw.slice(vi):raw;
+    var cands=scope.match(/[0-9OoIlSsBb.,]{3,}/g)||[];var best="",bl=-1;
+    cands.forEach(function(t){var s=t.replace(/[Oo]/g,"0").replace(/[IlSsBb]/g,function(ch){return {I:"1",l:"1",S:"5",s:"5",B:"8",b:"8"}[ch];}).replace(/,/g,".");
+      var mm=s.match(/\d+(?:\.\d+)?/g);if(!mm)return;mm.forEach(function(x){var dl=x.replace(/[^\d]/g,"").length;if(dl>=3&&dl>bl){bl=dl;best=x;}});});
+    return best;}
+  function toImage(src){if(src&&src.tagName==="IMG"&&src.naturalWidth)return Promise.resolve(src);
+    return new Promise(function(res,rej){var im=new Image();im.onload=function(){res(im);};im.onerror=function(){rej(new Error("load fail"));};im.src=src;});}
+  function readV(src,rect,key){return toImage(src).then(function(im){return ocr(preprocess(im,rect),key);}).then(function(t){return parseV(t);});}
+  return {readV:readV,parseV:parseV};
+})();
+
+/* ---------- timestamp burn + cropper ---------- */
+function stampTimestamp(dataUrl){return new Promise(function(resolve){var img=new Image();
+  img.onload=function(){try{var c=document.createElement("canvas");c.width=img.naturalWidth||img.width;c.height=img.naturalHeight||img.height;
+    var ctx=c.getContext("2d");ctx.drawImage(img,0,0);var n=new Date(),p=function(x){return String(x).padStart(2,"0");};
+    var txt=p(n.getDate())+"-"+p(n.getMonth()+1)+"-"+n.getFullYear()+"  "+p(n.getHours())+":"+p(n.getMinutes())+":"+p(n.getSeconds());
+    var fs=Math.max(20,Math.round(c.width*0.040));ctx.font="bold "+fs+"px Arial";ctx.textBaseline="bottom";
+    var pad=Math.round(fs*0.6),tw=ctx.measureText(txt).width;ctx.fillStyle="rgba(0,0,0,0.55)";ctx.fillRect(pad-8,c.height-fs-pad-8,tw+16,fs+16);
+    ctx.shadowColor="#ff6a00";ctx.shadowBlur=fs*0.6;ctx.fillStyle="#ff7a1a";ctx.fillText(txt,pad,c.height-pad);ctx.shadowBlur=0;
+    resolve(c.toDataURL("image/jpeg",0.9));}catch(e){resolve(dataUrl);}};
+  img.onerror=function(){resolve(dataUrl);};img.src=dataUrl;});}
+
+function showCropper(dataUrl){return new Promise(function(resolve){
+  var modal=$("cropModal"),stage=$("cropStage"),imgEl=$("cropImg"),box=$("cropBox");var loaded=new Image();
+  loaded.onload=function(){imgEl.src=dataUrl;var maxW=Math.min(window.innerWidth-24,700),maxH=window.innerHeight*0.60;
+    var nw=loaded.naturalWidth||maxW,nh=loaded.naturalHeight||maxH;var sc=Math.min(maxW/nw,maxH/nh,1);
+    var dw=Math.round(nw*sc),dh=Math.round(nh*sc);stage.style.width=dw+"px";stage.style.height=dh+"px";imgEl.style.width=dw+"px";imgEl.style.height=dh+"px";
+    var bw=Math.round(dw*0.8),bh=Math.round(dh*0.22);setBox(Math.round((dw-bw)/2),Math.round(dh*0.42),bw,bh);
+    modal._sc=sc;modal._img=loaded;modal._dw=dw;modal._dh=dh;modal.classList.add("open");};
+  loaded.onerror=function(){resolve({img:null,rect:null});};loaded.src=dataUrl;
+  function setBox(x,y,w,h){box.style.left=x+"px";box.style.top=y+"px";box.style.width=w+"px";box.style.height=h+"px";}
+  function getBox(){return {x:parseFloat(box.style.left)||0,y:parseFloat(box.style.top)||0,w:parseFloat(box.style.width)||0,h:parseFloat(box.style.height)||0};}
+  function point(e){var r=stage.getBoundingClientRect();var cx=(e.touches?e.touches[0].clientX:e.clientX),cy=(e.touches?e.touches[0].clientY:e.clientY);return {x:cx-r.left,y:cy-r.top};}
+  var drag=null;
+  function down(e){var p=point(e),b=getBox();drag={mode:(e.target&&e.target.classList&&e.target.classList.contains("crophandle"))?"resize":"move",sx:p.x,sy:p.y,b:b};e.preventDefault();}
+  function move(e){if(!drag)return;var p=point(e),dx=p.x-drag.sx,dy=p.y-drag.sy,b=drag.b,dw=modal._dw,dh=modal._dh;
+    if(drag.mode==="move")setBox(Math.max(0,Math.min(b.x+dx,dw-b.w)),Math.max(0,Math.min(b.y+dy,dh-b.h)),b.w,b.h);
+    else setBox(b.x,b.y,Math.max(40,Math.min(b.w+dx,dw-b.x)),Math.max(24,Math.min(b.h+dy,dh-b.y)));e.preventDefault();}
+  function up(){drag=null;}
+  box.addEventListener("pointerdown",down);document.addEventListener("pointermove",move,{passive:false});document.addEventListener("pointerup",up);
+  function done(){modal.classList.remove("open");box.removeEventListener("pointerdown",down);document.removeEventListener("pointermove",move);document.removeEventListener("pointerup",up);$("cropRead").onclick=null;$("cropCancel").onclick=null;$("cropFull").onclick=null;}
+  $("cropRead").onclick=function(){var b=getBox(),sc=modal._sc;var rect={x:Math.round(b.x/sc),y:Math.round(b.y/sc),w:Math.round(b.w/sc),h:Math.round(b.h/sc)};var img=modal._img;done();resolve({img:img,rect:rect});};
+  $("cropFull").onclick=function(){var img=modal._img;done();resolve({img:img,rect:null});};
+  $("cropCancel").onclick=function(){done();resolve(null);};});}
+
+/* ---------- scan wiring (used by open & close cards) ---------- */
+/* ---------- LIVE camera with a fixed orange box (needs HTTPS; falls back to photo+crop) ---------- */
+function liveCapture(which){
+  return new Promise(function(resolve){
+    if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){ resolve({unsupported:true}); return; }
+    var modal=$("liveModal"), video=$("liveVideo"), facing="environment", stream=null;
+    function stop(){ try{ if(stream){ stream.getTracks().forEach(function(t){t.stop();}); } }catch(e){} stream=null; }
+    function cleanup(){ $("liveCancel").onclick=null;$("liveSwitch").onclick=null;$("liveCapture").onclick=null; }
+    function start(){ stop();
+      navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:facing}},audio:false}).then(function(s){
+        stream=s; video.srcObject=s; var pl=video.play(); if(pl&&pl.catch)pl.catch(function(){}); modal.classList.add("open");
+      }).catch(function(err){ modal.classList.remove("open"); stop(); cleanup(); resolve({unsupported:true,error:err}); });
+    }
+    $("liveCancel").onclick=function(){ stop(); modal.classList.remove("open"); cleanup(); resolve(null); };
+    $("liveSwitch").onclick=function(){ facing=(facing==="environment")?"user":"environment"; start(); };
+    $("liveCapture").onclick=function(){
+      try{
+        var vw=video.videoWidth||1280, vh=video.videoHeight||720;
+        var cv=document.createElement("canvas"); cv.width=vw; cv.height=vh;
+        cv.getContext("2d").drawImage(video,0,0,vw,vh);
+        var dataUrl=cv.toDataURL("image/jpeg",0.92);
+        var FX=0.07,FW=0.86,FH=0.22,FY=(1-FH)/2;
+        var rect={x:Math.round(FX*vw),y:Math.round(FY*vh),w:Math.round(FW*vw),h:Math.round(FH*vh)};
+        stop(); modal.classList.remove("open"); cleanup(); resolve({dataUrl:dataUrl,rect:rect});
+      }catch(e){ stop(); modal.classList.remove("open"); cleanup(); resolve({unsupported:true,error:e}); }
+    };
+    start();
+  });
+}
+
+/* ---------- scan wiring (used by open & close cards) ---------- */
+function attachScan(div,which){
+  var fileIn=div.querySelector(".scaninput"),msg=div.querySelector("[data-scanmsg]"),btn=div.querySelector(".scanbtn");
+  msg.textContent="📷 Tap Scan — line up the V reading in the orange box.";
+  function finish(dataUrl,rect){
+    msg.className="scanmsg busy";msg.textContent="⏳ Reading…";
+    MeterOCR.readV(dataUrl,rect,OCR_SPACE_KEY).then(function(v){
+      if(v){div.querySelector('[data-f="'+which+'"]').value=v;recalc(div);msg.className="scanmsg okk";msg.textContent="✓ "+which+" = "+v+" (locked)";}
+      else{msg.className="scanmsg errr";msg.textContent="Couldn't read — retake with the V line filling the box.";}
+      stampTimestamp(dataUrl).then(function(st){call("savePhoto",{info:{dataUrl:st,which:which,caName:S.caName,date:S.date,du:S.du,nozzleNo:div.dataset.noz,product:div.dataset.prod}}).then(function(res){if(res&&res.photoUrl)div.dataset[which+"Photo"]=res.photoUrl;}).catch(function(){});});
+      btn.disabled=false;
+    }).catch(function(e){btn.disabled=false;msg.className="scanmsg errr";msg.textContent="Read failed: "+(e&&e.message?e.message:e);});
+  }
+  function fileFallback(){ msg.className="scanmsg";msg.textContent="✂️ Photograph, then crop the V line…"; fileIn.value=""; fileIn.click(); }
+  fileIn.addEventListener("change",function(){
+    var f=fileIn.files&&fileIn.files[0];if(!f)return;btn.disabled=true;msg.className="scanmsg busy";msg.textContent="✂️ Crop to the V line…";
+    var r=new FileReader();r.onload=function(){var dataUrl=r.result;
+      showCropper(dataUrl).then(function(sel){
+        if(!sel){btn.disabled=false;msg.className="scanmsg";msg.textContent="Cancelled — tap Scan to retry.";return;}
+        finish(dataUrl, sel.rect);
+      });
+    };r.readAsDataURL(f);});
+  btn.addEventListener("click",function(){
+    if(btn.disabled)return;
+    btn.disabled=true; msg.className="scanmsg busy"; msg.textContent="📷 Opening camera…";
+    liveCapture(which).then(function(res){
+      if(res===null){ btn.disabled=false; msg.className="scanmsg"; msg.textContent="Cancelled — tap Scan to retry."; return; }
+      if(res.unsupported){ btn.disabled=false; fileFallback(); return; }
+      finish(res.dataUrl, res.rect);
+    });
+  });
+}
+function recalc(div){
+  if(!div.dataset.close)return; // only close cards compute
+  var op=parseFloat(div.dataset.opening)||0, cl=parseFloat(div.querySelector('[data-f="closing"]').value)||0;
+  var vol=cl-op; div.querySelector('[data-o="vol"]').textContent=num(vol);
+  div.querySelector("[data-e]").textContent=(div.querySelector('[data-f="closing"]').value!==""&&cl<op)?"⚠ Closing is less than Opening — retake.":"";
+}
+
+/* ---------- session ---------- */
+var PREVIEW=false;
+var S={username:"",caName:"",role:"",date:"",du:"",shift:"",leader:"",nozzles:[]};
+var MODE="",verifyState="";
+function nozText(nz){return (nz||[]).map(function(n){return "N"+n.nozzleNo+" "+prodName(n.product);}).join(", ");}
+
+/* ---------- login ---------- */
+/* ---- exit guard: confirm before Back/close so in-progress data isn't lost ---- */
+var EXIT_GUARD=false;
+function _exitOnPop(){ if(window.confirm("Do you want to exit?\nAny unsaved data on this screen will be lost.")){ EXIT_GUARD=false; window.removeEventListener("beforeunload",_exitOnUnload); history.back(); } else { history.pushState(null,""); } }
+function _exitOnUnload(e){ if(!EXIT_GUARD) return; e.preventDefault(); e.returnValue=""; return ""; }
+function armExitGuard(){ if(EXIT_GUARD) return; EXIT_GUARD=true; try{history.pushState(null,"");}catch(e){} window.addEventListener("popstate",_exitOnPop); window.addEventListener("beforeunload",_exitOnUnload); }
+function disarmExitGuard(){ EXIT_GUARD=false; window.removeEventListener("popstate",_exitOnPop); window.removeEventListener("beforeunload",_exitOnUnload); }
+$("loginBtn").addEventListener("click",doLogin);
+$("p").addEventListener("keydown",function(e){if(e.key==="Enter")doLogin();});
+function doLogin(){
+  var u=$("u").value.trim(),p=$("p").value;if(!u||!p){$("loginErr").textContent="Enter username and password.";return;}
+  var btn=$("loginBtn");btn.disabled=true;btn.innerHTML='<span class="spin"></span> Checking…';$("loginErr").textContent="";
+  call("login",{username:u,password:p}).then(function(res){
+    btn.disabled=false;btn.textContent="Log in";
+    if(!res||!res.ok){$("loginErr").textContent=(res&&res.error)||"Login failed";return;}
+    if(String(res.role).toUpperCase()!=="CA"){$("loginErr").textContent="This is the CA app. Use the Supervisor app for supervisor logins.";return;}
+    S.username=res.username;S.caName=res.name;S.role=res.role;
+    $("who").textContent=res.name;
+    $("loginScreen").classList.add("hide");$("app").classList.remove("hide");
+    loadAllocation(); armExitGuard();
+  }).catch(function(e){btn.disabled=false;btn.textContent="Log in";$("loginErr").textContent="Network error: "+(e&&e.message?e.message:e);});
+}
+
+/* ---------- allocation ---------- */
+function loadAllocation(){
+  S.date=today();
+  call("getMyAllocation",{caName:S.caName,date:S.date}).then(function(res){
+    if(res&&res.ok&&res.allocation){
+      var a=res.allocation;S.du=a.du;S.shift=a.shift;S.leader=a.shiftLeader;S.nozzles=a.nozzles||[];
+      $("date").value=a.date;$("shift").value=a.shift;$("du").value="Dispenser "+a.du+(a.side?(" · Side "+a.side):"");$("leader").value=a.shiftLeader||"—";$("caName").value=S.caName;$("nozSummary").value=nozText(S.nozzles);
+      $("allocBox").classList.remove("hide");$("noAlloc").classList.add("hide");
+      $("modeCard").classList.remove("hide");
+    }else{
+      $("noAlloc").textContent="No shift assigned to you for today ("+S.date+"). Ask your supervisor to allocate you to a dispenser.";
+      $("noAlloc").classList.remove("hide");$("allocBox").classList.add("hide");$("modeCard").classList.add("hide");
+    }
+  }).catch(function(e){$("noAlloc").textContent="Could not load your shift: "+(e&&e.message?e.message:e);$("noAlloc").classList.remove("hide");});
+}
+
+/* ---------- opening ---------- */
+function openNozzleCard(nz){
+  var prod=nz.product,noNo=nz.nozzleNo;
+  var d=document.createElement("div");d.className="nozzle";d.dataset.noz=noNo;d.dataset.prod=prod;
+  d.innerHTML='<div class="code">Dispenser '+S.du+' &middot; Nozzle '+noNo+' &middot; '+prod+' ('+prodName(prod)+')</div>'+
+    '<label>Opening Reading (photo only)</label><input data-f="opening" readonly placeholder="tap Scan, then crop the V line">'+
+    '<div class="scanrow"><button type="button" class="scanbtn">📷 Scan Opening</button>'+
+    '<input type="file" accept="image/*" capture="environment" class="scaninput" hidden><span class="scanmsg" data-scanmsg></span></div>';
+  $("openNozzles").appendChild(d);attachScan(d,"opening");return d;
+}
+function buildOpening(){$("openNozzles").innerHTML="";(S.nozzles||[]).forEach(function(nz){openNozzleCard(nz);});}
+
+/* ---------- closing ---------- */
+function closeNozzleCard(n){
+  var d=document.createElement("div");d.className="nozzle";d.dataset.noz=n.nozzleNo;d.dataset.prod=n.product;d.dataset.key=n.key;d.dataset.opening=n.opening;d.dataset.close="1";
+  d.innerHTML='<div class="code">Dispenser '+S.du+' &middot; '+n.product+' ('+prodName(n.product)+')</div>'+
+    '<label>Opening (this morning)</label><input readonly value="'+n.opening+'">'+
+    '<label style="margin-top:8px">Closing Reading (photo only)</label><input data-f="closing" readonly placeholder="tap Scan, then crop the V line">'+
+    '<div class="scanrow"><button type="button" class="scanbtn">📷 Scan Closing</button>'+
+    '<input type="file" accept="image/*" capture="environment" class="scaninput" hidden><span class="scanmsg" data-scanmsg></span></div>'+
+    '<div class="ewarn" data-e></div>'+
+    '<div class="pillrow"><div class="pill"><span>Opening</span><b>'+num(n.opening)+'</b></div><div class="pill"><span>Sales Volume (L)</span><b data-o="vol">0.00</b></div></div>';
+  $("closeNozzles").appendChild(d);attachScan(d,"closing");return d;
+}
+function loadOpenings(){
+  $("closeNozzles").innerHTML="";
+  if(PREVIEW){ [{key:"d1",nozzleNo:"1",product:"MS",opening:75674.090},{key:"d2",nozzleNo:"1",product:"HS",opening:60123.450}].forEach(function(n){closeNozzleCard(n);}); $("closeMsg").textContent="Preview — demo opening readings."; return; }
+  $("closeMsg").textContent="Loading your opening readings…";
+  call("getOpen",{query:{date:S.date,du:S.du,shift:S.shift}}).then(function(res){
+    if(res&&res.ok&&res.nozzles&&res.nozzles.length){
+      res.nozzles.sort(function(a,b){var rk=function(p){return p==="MS"?0:(p==="HS"?1:(p==="CNG"?2:3));};return rk(a.product)-rk(b.product)||(Number(a.nozzleNo)-Number(b.nozzleNo));});
+      res.nozzles.forEach(function(n){closeNozzleCard(n);});
+      $("closeMsg").textContent="Loaded "+res.nozzles.length+" nozzle(s). Photograph each CLOSING meter.";
+    }else if(res&&res.ok){$("closeMsg").textContent="No opening readings found for today. Did you save your OPENING this morning?";}
+    else{$("closeMsg").textContent="Could not load: "+((res&&res.error)||"unknown");}
+  }).catch(function(e){$("closeMsg").textContent="Could not load: "+(e&&e.message?e.message:e);});
+}
+
+/* ---------- verification ---------- */
+$("vYes").addEventListener("click",function(){verifyState="Verified";$("vYes").classList.add("sel");$("vNo").classList.remove("sel");$("vHint").textContent="Verified ✓ — ready to submit.";});
+$("vNo").addEventListener("click",function(){verifyState="Not verified";$("vNo").classList.add("sel");$("vYes").classList.remove("sel");$("vHint").textContent="Marked Not verified.";});
+
+/* ---------- mode + submit ---------- */
+$("mOpen").addEventListener("click",function(){setMode("open");});
+$("mClose").addEventListener("click",function(){setMode("close");});
+function setMode(m){MODE=m;
+  $("mOpen").classList.toggle("sel",m==="open");$("mClose").classList.toggle("sel",m==="close");
+  $("openCard").classList.toggle("hide",m!=="open");
+  $("closeCard").classList.toggle("hide",m!=="close");$("verifyCard").classList.toggle("hide",m!=="close");
+  $("submitbar").classList.add("show");$("submitBtn").textContent=(m==="open")?"Save Opening (draft)":"Submit Closing";
+  $("formErr").textContent="";
+  if(m==="open"){ buildOpening(); } else { loadOpenings(); }   /* closing auto-fetches the opening draft */
+  var target=(m==="open")?$("openCard"):$("closeCard");
+  setTimeout(function(){ if(target){ var y=target.getBoundingClientRect().top+window.pageYOffset-70; window.scrollTo({top:(y>0?y:0),behavior:"smooth"}); } },80);   /* auto-scroll to the section on phones */
+}
+$("submitBtn").addEventListener("click",function(){MODE==="open"?saveOpening():submitClosing();});
+
+function saveOpening(){
+  if(PREVIEW){ showModal("Preview only","This is a layout preview. Log in to actually save."); return; }
+  var nozzles=[],bad=false;
+  document.querySelectorAll("#openNozzles .nozzle").forEach(function(d){
+    var op=d.querySelector('[data-f="opening"]').value;
+    if(op!=="")nozzles.push({nozzleNo:d.dataset.noz,product:d.dataset.prod,opening:parseFloat(op),openingPhoto:d.dataset.openingPhoto||""});
+  });
+  if(nozzles.length===0){$("formErr").textContent="Photograph at least one opening meter first.";return;}
+  var payload={meta:{date:S.date,du:S.du,shift:S.shift,caName:S.caName,shiftLeader:S.leader},nozzles:nozzles};
+  var btn=$("submitBtn");btn.disabled=true;btn.innerHTML='<span class="spin"></span> Saving…';
+  call("saveOpen",{payload:payload}).then(function(res){btn.disabled=false;btn.textContent="Save Opening (draft)";
+    if(res&&res.ok){showModal("✓ Opening saved","Saved <b>"+res.count+"</b> opening reading(s) for Dispenser "+S.du+", Shift "+S.shift+".<br><br>Come back this evening and choose CLOSING.");}
+    else showModal("Save failed",(res&&res.error)||"unknown");
+  }).catch(function(e){btn.disabled=false;btn.textContent="Save Opening (draft)";showModal("Save failed",(e&&e.message)||e);});
+}
+
+function submitClosing(){
+  if(PREVIEW){ showModal("Preview only","This is a layout preview. Log in to actually submit."); return; }
+  var rows=document.querySelectorAll("#closeNozzles .nozzle");
+  if(rows.length===0){$("formErr").textContent="Load your opening readings first.";return;}
+  var nozzles=[],bad=false,less=false;
+  rows.forEach(function(d){var cl=d.querySelector('[data-f="closing"]').value;var op=parseFloat(d.dataset.opening)||0;
+    if(cl===""){bad=true;return;}if(parseFloat(cl)<op)less=true;
+    nozzles.push({key:d.dataset.key,nozzleNo:d.dataset.noz,product:d.dataset.prod,closing:parseFloat(cl),closingPhoto:d.dataset.closingPhoto||""});});
+  if(bad){$("formErr").textContent="Photograph every closing meter.";return;}
+  if(less){$("formErr").textContent="A closing is less than its opening — retake that photo.";return;}
+  if(!verifyState){$("formErr").textContent="Tap Verified / Not verified first.";return;}
+  $("formErr").textContent="";
+  var payload={meta:{date:S.date,du:S.du,shift:S.shift,caName:S.caName},nozzles:nozzles,verification:verifyState};
+  var btn=$("submitBtn");btn.disabled=true;btn.innerHTML='<span class="spin"></span> Submitting…';
+  call("saveClose",{payload:payload}).then(function(res){btn.disabled=false;btn.textContent="Submit Closing";
+    if(res&&res.ok){showModal("✓ Closing submitted","Saved <b>"+res.closed+"</b> closing reading(s). Your supervisor will review and finalise the DCR.");}
+    else showModal("Submit failed",(res&&res.error)||"unknown");
+  }).catch(function(e){btn.disabled=false;btn.textContent="Submit Closing";showModal("Submit failed",(e&&e.message)||e);});
+}
+$("loadOpen").addEventListener("click",loadOpenings);
+</script>
+</body>
+</html>

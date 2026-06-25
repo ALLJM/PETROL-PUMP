@@ -1,0 +1,49 @@
+<!-- Petrol Retail Outlet (RO) — launcher -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Petrol Retail Outlet (RO)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Manrope:wght@600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  :root{--brand:#23282f;--brand-d:#14171c;--accent:#f5a623;--accent-d:#e0890c;--ink:#1d2126;--muted:#7b8089;--line:#e7e2d9;--bg:#f2efe9}
+  *{box-sizing:border-box}
+  body{margin:0;min-height:100vh;font-family:'Inter',-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+    color:var(--ink);background:radial-gradient(1100px 460px at 100% -8%, #efe7da 0%, rgba(239,231,218,0) 60%), var(--bg);
+    display:flex;align-items:center;justify-content:center;padding:20px}
+  .wrap{max-width:440px;width:100%;text-align:center}
+  .logo{font-family:'Manrope',sans-serif;font-weight:900;font-size:26px;color:var(--brand);display:flex;align-items:center;justify-content:center;gap:9px}
+  .logo::before{content:"\26FD"}
+  .sub{color:var(--muted);margin:6px 0 26px;font-size:14px}
+  a.card{display:flex;align-items:center;gap:14px;text-decoration:none;background:#fff;border:1px solid var(--line);
+    border-radius:16px;padding:18px 20px;margin-bottom:14px;box-shadow:0 6px 22px rgba(28,25,20,.08);transition:.15s;text-align:left}
+  a.card:hover{transform:translateY(-2px);box-shadow:0 12px 30px rgba(28,25,20,.13);border-color:var(--accent)}
+  .ic{width:46px;height:46px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;
+    background:linear-gradient(135deg,var(--brand),var(--brand-d));color:#fff}
+  .t b{display:block;font-family:'Manrope',sans-serif;font-size:17px;color:var(--ink)}
+  .t span{font-size:13px;color:var(--muted)}
+  .foot{margin-top:18px;font-size:12px;color:var(--muted)}
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="logo">Petrol Retail Outlet (RO)</div>
+    <div class="sub">Daily Collection Report</div>
+
+    <a class="card" href="supervisor.html">
+      <div class="ic">&#128202;</div>
+      <div class="t"><b>Supervisor</b><span>Assign shifts, rates, collection &amp; dashboard</span></div>
+    </a>
+
+    <a class="card" href="ca.html">
+      <div class="ic">&#9981;</div>
+      <div class="t"><b>Customer Attendant</b><span>Photograph opening &amp; closing meter readings</span></div>
+    </a>
+
+    <div class="foot">Sign-in required &middot; works best in Chrome</div>
+  </div>
+</body>
+</html>

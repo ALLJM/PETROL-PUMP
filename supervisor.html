@@ -1,0 +1,782 @@
+<!-- ===== Petrol Retail Outlet (RO) — SUPERVISOR app ===== -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RO — Supervisor</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Manrope:wght@600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  :root{--brand:#23282f;--brand-d:#14171c;--accent:#f5a623;--accent-d:#e0890c;--steel:#3b6ea5;--ink:#1d2126;--muted:#7b8089;
+    --line:#e7e2d9;--bg:#f2efe9;--card:#ffffff;--good:#1f9d57;--bad:#d1495b;--soft:#f7f3ec;--radius:16px;--shadow:0 6px 22px rgba(28,25,20,.10),0 1px 3px rgba(28,25,20,.06)}
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;background:var(--bg);color:var(--ink);font-size:15px;line-height:1.45}
+  header.app{background:linear-gradient(135deg,var(--brand),var(--brand-d));color:#fff;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:30}
+  header.app .nm{font-size:16px;font-weight:800}.header .sub{font-size:11px;opacity:.85}
+  header.app .who{font-size:12px;display:flex;gap:10px;align-items:center}
+  header.app .who button{background:rgba(255,255,255,.18);border:none;color:#fff;border-radius:8px;padding:6px 10px;cursor:pointer;font-weight:700}
+  label{display:block;font-size:12px;color:var(--muted);margin:0 0 4px;font-weight:600}
+  input,select{width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:10px;font-size:16px;background:#fff;color:var(--ink);font-family:inherit}
+  input[readonly]{background:var(--soft);font-weight:700}
+  .btn{border:none;border-radius:12px;padding:13px 16px;font-size:15px;font-weight:800;cursor:pointer;background:var(--accent);color:#3a2a00}
+  .btn.sec{background:#fff;border:1.5px solid var(--brand);color:var(--brand)}
+  .btn:disabled{opacity:.5}
+  .err{color:var(--bad);font-size:13px;font-weight:600;margin-top:8px;min-height:16px}
+  .ok{color:var(--good);font-weight:700}
+  /* login */
+  .loginwrap{min-height:78vh;display:flex;align-items:center;justify-content:center;padding:16px}
+  .loginbox{max-width:380px;width:100%;text-align:center}
+  .loginbox h1{font-size:30px;margin:0 0 4px;color:var(--brand)}.loginbox p{margin:0 0 18px;color:var(--muted)}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow)}
+  /* layout */
+  .shell{display:flex;min-height:90vh}
+  .side{width:210px;background:var(--brand-d);color:#fff;flex-shrink:0;padding:12px 0}
+  .side a{display:block;padding:13px 18px;color:#dfeee7;text-decoration:none;font-weight:700;font-size:14px;cursor:pointer;border-left:4px solid transparent}
+  .side a.sel{background:rgba(255,255,255,.10);border-left-color:var(--accent);color:#fff}
+  .main{flex:1;padding:18px;max-width:980px}
+  h2.t{margin:0 0 14px;font-size:20px;color:var(--brand)}
+  @media(max-width:720px){.shell{flex-direction:column}.side{width:100%;display:flex;overflow-x:auto;padding:0}.side a{border-left:none;border-bottom:3px solid transparent;white-space:nowrap}.side a.sel{border-left:none;border-bottom-color:var(--accent)}}
+  /* dispensers */
+  .toolbar{display:flex;gap:12px;align-items:end;flex-wrap:wrap;margin-bottom:16px}
+  .toolbar .f{min-width:160px}
+  .dispgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+  @media(max-width:620px){.dispgrid{grid-template-columns:repeat(2,1fr)}}
+  .disp{background:#fff;border:2px solid var(--line);border-radius:14px;padding:14px 10px;text-align:center;cursor:pointer;transition:.15s}
+  .disp:hover{border-color:var(--brand)}
+  .disp .no{font-size:22px;font-weight:800;color:var(--brand)}
+  .disp svg{display:block;margin:6px auto}
+  .disp .pr{font-size:12px;font-weight:700;color:#3a2a00;background:#ffe9c2;border-radius:20px;padding:2px 10px;display:inline-block;margin-top:4px}
+  .disp .as{font-size:12px;margin-top:8px;color:var(--muted)}
+  .disp .as b{color:var(--good)}
+  .disp.assigned{border-color:var(--good);background:#f1faf4}
+  .clrwrap{display:flex;flex-direction:column;gap:5px;margin-top:8px}
+  .clrbtn{border:1px solid #e3b7b7;background:#fff;color:var(--bad);border-radius:8px;padding:5px 8px;font-size:11px;font-weight:700;cursor:pointer}
+  .clrbtn:hover{background:#fdecea}
+  /* generic card */
+  .panel{background:#fff;border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);padding:16px;margin-bottom:16px}
+  .grid{display:grid;gap:12px}.g2{grid-template-columns:1fr 1fr}.g3{grid-template-columns:1fr 1fr 1fr}
+  @media(max-width:560px){.g2,.g3{grid-template-columns:1fr}}
+  table{width:100%;border-collapse:collapse;font-size:14px}
+  th,td{border:1px solid var(--line);padding:7px 8px;text-align:center}
+  th{background:var(--soft);font-size:11px;text-transform:uppercase;color:var(--muted)}
+  .calist{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:14px}
+  .calist button{border:1.5px solid var(--brand);background:#fff;color:var(--brand);border-radius:20px;padding:8px 16px;font-weight:700;cursor:pointer}
+  .calist button.sel{background:var(--brand);color:#fff}
+  .tot{display:flex;justify-content:space-between;background:var(--soft);border:1px solid var(--line);border-radius:10px;padding:11px 13px;margin-top:8px;font-weight:700}
+  .tot.big{background:var(--brand);color:#fff;font-size:16px}.tot.warn{background:#fff5e6}
+  .moneyrow{display:grid;grid-template-columns:1fr 130px;gap:10px;margin-bottom:8px;align-items:end}
+  .hide{display:none!important}
+  .modal{position:fixed;inset:0;background:rgba(10,25,20,.55);display:none;align-items:center;justify-content:center;z-index:50;padding:16px}
+  .modal.open{display:flex}.modal .box{background:#fff;border-radius:16px;max-width:460px;width:100%;overflow:hidden}
+  .modal h3{margin:0;padding:16px;background:var(--brand);color:#fff}.modal .c{padding:16px}.modal .a{display:flex;gap:10px;padding:0 16px 16px}
+  .modal .a button{flex:1;padding:12px;border:none;border-radius:10px;font-weight:700;cursor:pointer}
+  .spin{display:inline-block;width:15px;height:15px;border:2px solid rgba(0,0,0,.2);border-top-color:#3a2a00;border-radius:50%;animation:sp .7s linear infinite;vertical-align:-2px}
+  @keyframes sp{to{transform:rotate(360deg)}}
+  a.ph{color:var(--brand);font-weight:700;text-decoration:none}
+  /* dashboard */
+  .dashhead{display:flex;justify-content:space-between;align-items:flex-end;gap:14px;flex-wrap:wrap;margin-bottom:16px}
+  .dashhead .ttl h2{margin:0;font-size:22px;color:var(--ink)}
+  .dashhead .ttl p{margin:2px 0 0;color:var(--muted);font-size:13px}
+  .dashhead .ctrls{display:flex;gap:10px;align-items:end;flex-wrap:wrap}
+  .dashhead .ctrls .f{min-width:150px}
+  .presets{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
+  .presets button{border:1.5px solid var(--line);background:#fff;color:var(--ink);border-radius:20px;padding:7px 14px;font-weight:700;font-size:12.5px;cursor:pointer}
+  .presets button.sel{background:var(--brand);color:#fff;border-color:var(--brand)}
+  .dashnote{background:#fff5e6;border:1px solid #f0d9a8;color:#8a6d3b;border-radius:10px;padding:10px 13px;margin-bottom:14px;font-size:13px;font-weight:600}
+  .bar{height:8px;background:#e8eef0;border-radius:999px;overflow:hidden;min-width:80px}.bar i{display:block;height:100%;background:var(--brand)}
+  #dailyPanel{overflow-x:auto;margin-bottom:16px}
+  .main.wide{max-width:none}
+  .autotag{font-size:11px;color:var(--muted);display:flex;align-items:center;gap:5px;align-self:center}
+  .dot{width:8px;height:8px;border-radius:50%;background:var(--good);display:inline-block;animation:pulse 1.6s infinite}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.25}}
+  .herorow{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:16px}
+  @media(max-width:720px){.herorow{grid-template-columns:1fr}}
+  .hero{background:#fff;border:1px solid var(--line);border-radius:16px;padding:16px 18px;box-shadow:var(--shadow);position:relative;border-left:5px solid var(--brand)}
+  .hero.col{border-left-color:#2b6cff}.hero.diff{border-left-color:var(--bad)}
+  .hero .lab{font-size:11px;font-weight:800;text-transform:uppercase;color:var(--muted);letter-spacing:.4px}
+  .hero .val{font-size:26px;font-weight:900;color:var(--ink);margin-top:6px}
+  .hero .val.bad{color:var(--bad)}.hero .val.good{color:var(--good)}
+  .badge{position:absolute;top:14px;right:14px;font-size:10.5px;font-weight:800;padding:3px 9px;border-radius:20px;background:#eaf5ee;color:var(--good)}
+  .badge.warn{background:#fdecea;color:var(--bad)}.badge.info{background:#eaf0ff;color:#2b6cff}
+  .panelrow{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:16px}
+  @media(max-width:900px){.panelrow{grid-template-columns:1fr}}
+  .pcard{background:#fff;border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);padding:16px}
+  .pcard h3{margin:0 0 12px;font-size:14px;color:var(--ink)}
+  .pcard h3 small{display:block;font-weight:500;color:var(--muted);font-size:11px;margin-top:2px}
+  .kv{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .kbox{background:var(--soft);border:1px solid var(--line);border-radius:10px;padding:9px 11px}
+  .kbox .k{font-size:10.5px;font-weight:700;text-transform:uppercase;color:var(--muted)}
+  .kbox .v{font-size:16px;font-weight:800;color:var(--brand);margin-top:3px}
+  .pay{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px dashed var(--line);font-size:13px}
+  .pay:last-of-type{border-bottom:none}
+  .pay .nm{display:flex;align-items:center;gap:8px;color:var(--ink)}
+  .pay .sw{width:10px;height:10px;border-radius:3px;display:inline-block}
+  .pay .am{font-weight:700}
+  .paytot{display:flex;justify-content:space-between;background:var(--brand);color:#fff;border-radius:10px;padding:10px 12px;margin-top:10px;font-weight:800;font-size:14px}
+  .donutwrap{display:flex;gap:14px;align-items:center}.donutwrap svg{flex-shrink:0}
+  .leg{font-size:12px;flex:1}.leg div{display:flex;justify-content:space-between;gap:10px;padding:4px 0}
+  .leg .nm{display:flex;align-items:center;gap:7px;color:var(--ink)}
+  .leg .sw{width:10px;height:10px;border-radius:50%;display:inline-block}
+  .chartrow{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px}
+  @media(max-width:900px){.chartrow{grid-template-columns:1fr}}
+  .bars{display:flex;align-items:flex-end;gap:14px;height:180px;padding:10px 4px 0;border-bottom:2px solid var(--line)}
+  .barcol{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%}
+  .barcol .bv{font-size:11px;font-weight:800;color:var(--ink);margin-bottom:4px}
+  .barcol .bk{font-size:11px;color:var(--muted);margin-top:6px;text-align:center}
+  .barcol .br{width:62%;border-radius:7px 7px 0 0;min-height:3px;transition:height .3s}
+  .twocol{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media(max-width:900px){.twocol{grid-template-columns:1fr}}
+  .twocol .pcard{overflow-x:auto}
+
+  /* ============ PREMIUM · Warm Industrial ============ */
+  body{font-family:'Inter',-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+    background:radial-gradient(1100px 460px at 100% -8%, #efe7da 0%, rgba(239,231,218,0) 60%), var(--bg)}
+  h1,h2,h3,.nm,.hero .val,.kbox .v,.tot,.disp .no,.loginbox h1,#dueVal,.paytot,.barcol .bv{font-family:'Manrope','Inter',sans-serif}
+  header.app{background:linear-gradient(120deg,#23282f,#14171c);border-bottom:2px solid var(--accent);box-shadow:0 6px 22px rgba(0,0,0,.20)}
+  header.app .nm{letter-spacing:.3px;display:flex;align-items:center;gap:8px}
+  header.app .nm::before{content:"⛽"}
+  .side{background:linear-gradient(180deg,#23282f,#14171c)}
+  .side a{margin:3px 8px;border-radius:10px;border-left:0!important;color:#cdd2d8;transition:.15s}
+  .side a:hover{background:rgba(245,166,35,.12);color:#fff}
+  .side a.sel{background:linear-gradient(90deg,rgba(245,166,35,.22),rgba(245,166,35,.04));color:#fff;box-shadow:inset 3px 0 0 var(--accent)}
+  .btn{background:linear-gradient(180deg,#f7b441,var(--accent-d));color:#241a02;box-shadow:0 6px 16px rgba(245,166,35,.35);transition:transform .12s, box-shadow .12s;letter-spacing:.2px}
+  .btn:hover{transform:translateY(-1px);box-shadow:0 9px 22px rgba(245,166,35,.45)}
+  .btn:active{transform:translateY(0)}
+  .btn.sec{background:#fff;border:1.5px solid var(--line);color:var(--ink);box-shadow:var(--shadow)}
+  .btn.sec:hover{border-color:var(--accent);color:var(--accent-d)}
+  input,select{transition:border-color .15s, box-shadow .15s}
+  input:focus,select:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(245,166,35,.20)}
+  .panel,.pcard,.card{border:1px solid var(--line);box-shadow:var(--shadow)}
+  .pcard{transition:box-shadow .18s, transform .18s}
+  .pcard:hover{box-shadow:0 14px 34px rgba(28,25,20,.13);transform:translateY(-2px)}
+  .hero{background:linear-gradient(180deg,#ffffff,#fcfaf5)}
+  .hero .val{font-weight:900;letter-spacing:-.6px}
+  .hero.col{border-left-color:var(--steel)}
+  .badge.info{background:rgba(59,110,165,.12);color:var(--steel)}
+  .disp{background:linear-gradient(180deg,#fff,#fdfbf6);transition:.15s}
+  .disp:hover{border-color:var(--accent);transform:translateY(-2px);box-shadow:var(--shadow)}
+  th{letter-spacing:.5px}
+  tbody tr:hover{background:var(--soft)}
+  .tot.big,.paytot{background:linear-gradient(120deg,#23282f,#14171c)}
+  .calist button:hover{border-color:var(--accent);color:var(--accent-d)}
+  .calist button.sel{background:linear-gradient(180deg,#f7b441,var(--accent-d));border-color:var(--accent-d);color:#241a02}
+  .presets button{transition:.15s}
+  .presets button:hover{border-color:var(--accent);color:var(--accent-d)}
+  .presets button.sel{background:linear-gradient(180deg,#f7b441,var(--accent-d));border-color:var(--accent-d);color:#241a02}
+  .autotag .dot{box-shadow:0 0 0 3px rgba(31,157,87,.18)}
+  *::-webkit-scrollbar{height:10px;width:10px}*::-webkit-scrollbar-thumb{background:#cdc4b5;border-radius:8px}*::-webkit-scrollbar-track{background:transparent}
+</style>
+</head>
+<body>
+<header class="app">
+  <div><div class="nm">Petrol Retail Outlet (RO)</div><div class="sub">Supervisor console</div></div>
+  <div class="who" id="who"></div>
+</header>
+
+<!-- LOGIN -->
+<div id="loginScreen" class="loginwrap">
+  <div class="loginbox">
+    <h1>Good day</h1>
+    <p>Supervisor sign-in</p>
+    <div class="card" style="padding:18px;text-align:left">
+      <label>Username</label><input id="u" autocapitalize="off" placeholder="e.g. admin">
+      <div style="height:10px"></div>
+      <label>Password</label><input id="p" type="password" placeholder="••••">
+      <div style="height:14px"></div>
+      <button class="btn" id="loginBtn" style="width:100%">Log in</button>
+      <div class="err" id="loginErr"></div>
+    </div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app" class="shell hide">
+  <nav class="side">
+    <a id="navDisp" class="sel">🛢 Dispensers &amp; Shifts</a>
+    <a id="navRate">⛽ Fuel Rate</a>
+    <a id="navRep">📊 Collection Report</a>
+    <a id="navDash">📈 Dashboard</a>
+  </nav>
+  <div class="main">
+
+    <!-- DISPENSERS -->
+    <section id="dispView">
+      <h2 class="t">Dispensers &amp; Shift Allocation</h2>
+      <div class="toolbar">
+        <div class="f"><label>Date</label><input type="date" id="allocDate"></div>
+        <div class="hint" style="color:var(--muted);font-size:13px;align-self:center">Tap a dispenser to assign a CA for the day.</div>
+      </div>
+      <div class="dispgrid" id="dispGrid"></div>
+    </section>
+
+    <!-- RATES -->
+    <section id="rateView" class="hide">
+      <h2 class="t">Fuel Rate (₹ / litre)</h2>
+      <div class="panel">
+        <div class="grid g3">
+          <div><label>MS (Petrol)</label><input type="number" step="0.01" id="rMS"></div>
+          <div><label>HS (Diesel / HSD)</label><input type="number" step="0.01" id="rHS"></div>
+          <div><label>CNG</label><input type="number" step="0.01" id="rCNG"></div>
+        </div>
+        <div style="height:14px"></div>
+        <button class="btn" id="saveRates">🔒 Set &amp; Lock Rates</button>
+        <span id="rateMsg" class="ok" style="margin-left:12px"></span>
+        <p class="hint" style="color:var(--muted);font-size:12px;margin-top:10px">These rates apply to every CA's sales value. The CA app never shows or changes rates.</p>
+      </div>
+    </section>
+
+    <!-- COLLECTION REPORT -->
+    <section id="repView" class="hide">
+      <h2 class="t">Collection Report</h2>
+      <div class="toolbar">
+        <div class="f"><label>Date</label><input type="date" id="repDate"></div>
+      </div>
+      <div class="calist" id="caList"></div>
+      <div id="repBody" class="hide">
+        <div id="repFinNote" class="dashnote" style="display:none"></div>
+        <div class="panel">
+          <h3 style="margin:0 0 10px">Readings — <span id="repCAName"></span></h3>
+          <table id="readTable"><thead><tr><th>Dispenser/Nozzle</th><th>Product</th><th>Opening</th><th>Closing</th><th>Volume (L)</th><th>Nozzle Test (L)</th><th>Net Vol (L)</th><th>Rate</th><th>Value ₹</th><th>Photos</th><th>CA Verify</th></tr></thead><tbody id="readBody"></tbody></table>
+          <div class="tot big"><span>Sales Value Due</span><span id="dueVal">₹0.00</span></div>
+        </div>
+
+        <div class="panel">
+          <h3 style="margin:0 0 10px">Collection</h3>
+          <div id="collBox"></div>
+          <div class="tot big"><span>Total Collection</span><span id="collTot">₹0.00</span></div>
+          <div class="tot warn" id="seRow"><span>Short / Excess</span><span id="seVal">₹0.00</span></div>
+          <div style="margin-top:10px"><label>Packed Products ₹ <span style="font-weight:400;color:var(--muted)">(supervisor sale — optional, day total)</span></label><input id="packedAmt" inputmode="decimal" placeholder="0"></div>
+        </div>
+
+        <div class="panel">
+          <h3 style="margin:0 0 10px">Interim Cash Collected</h3>
+          <div id="intBox"></div>
+          <div class="tot"><span>Interim Total</span><span id="intTot">₹0.00</span></div>
+          <div class="tot" id="intMatchRow"><span>Interim vs Cash collected</span><span id="intMatch">—</span></div>
+        </div>
+
+        <div class="panel">
+          <h3 style="margin:0 0 10px">Denomination of Cash</h3>
+          <table><thead><tr><th>Note</th><th>Count</th><th>Amount</th></tr></thead><tbody id="denBody"></tbody>
+            <tfoot><tr><td colspan="2" style="text-align:right;font-weight:700">Total</td><td id="denTot">0.00</td></tr></tfoot></table>
+          <div class="tot" id="denMatchRow"><span>Denomination vs Cash collected</span><span id="denMatch">—</span></div>
+        </div>
+
+        <button class="btn" id="finalizeBtn" style="width:100%">✅ Finalize DCR for this CA</button>
+        <div class="err" id="repErr" style="text-align:center"></div>
+      </div>
+      <div id="repEmpty" class="hint" style="color:var(--muted)">Pick a CA above to see their readings and enter the cash.</div>
+    </section>
+
+    <!-- DASHBOARD -->
+    <section id="dashView" class="hide">
+      <div class="dashhead">
+        <div class="ttl"><h2>Dashboard Overview</h2><p id="dashPeriod">Fuel Retail Outlet (RO) &middot; collection &amp; sales</p></div>
+        <div class="ctrls">
+          <div class="f"><label>From</label><input type="date" id="dashFrom"></div>
+          <div class="f"><label>To</label><input type="date" id="dashTo"></div>
+          <button class="btn sec" id="dashRefresh">&#8635; Refresh</button>
+          <span class="autotag"><span class="dot"></span>Auto-refresh on</span>
+        </div>
+      </div>
+      <div class="presets" id="dashPresets">
+        <button data-p="today">Today</button>
+        <button data-p="yesterday">Yesterday</button>
+        <button data-p="week">This Week</button>
+        <button data-p="month">This Month</button>
+        <button data-p="fy">This FY</button>
+        <button data-p="lastfy">Last FY</button>
+        <button data-p="lifetime">Lifetime</button>
+      </div>
+      <div id="dashErr" class="err"></div>
+      <div id="dashNote" class="dashnote" style="display:none"></div>
+      <div id="dashBody">
+
+        <div class="herorow">
+          <div class="hero"><span class="badge info" id="hSalesBadge">Today</span>
+            <div class="lab">Total Sales</div><div class="val" id="hSales">&#8377;0.00</div></div>
+          <div class="hero col"><span class="badge info" id="hShifts">0 shifts</span>
+            <div class="lab">Total Collection</div><div class="val good" id="hColl">&#8377;0.00</div></div>
+          <div class="hero diff"><span class="badge warn" id="hDiffBadge">&mdash;</span>
+            <div class="lab">Difference / Variation</div><div class="val" id="hDiff">&#8377;0.00</div></div>
+        </div>
+
+        <div class="panelrow">
+          <div class="pcard"><h3>Volume <small>Dispensed quantity</small></h3>
+            <div class="kv">
+              <div class="kbox"><div class="k">Total Volume</div><div class="v" id="vGross">0 L</div></div>
+              <div class="kbox"><div class="k">Nozzle Test</div><div class="v" id="vTest">0 L</div></div>
+              <div class="kbox"><div class="k">Net Fuel Vol</div><div class="v" id="vNet">0 L</div></div>
+              <div class="kbox"><div class="k">Shifts Closed</div><div class="v" id="vShifts">0</div></div>
+            </div>
+          </div>
+          <div class="pcard"><h3>Payment Modes <small>Collection by mode</small></h3>
+            <div id="payList"></div>
+            <div class="paytot"><span>Total Collection</span><span id="payTot">&#8377;0.00</span></div>
+          </div>
+          <div class="pcard"><h3>Today's Split <small>Sales vs collection</small></h3>
+            <div class="donutwrap"><div id="donut"></div><div class="leg" id="donutLeg"></div></div>
+          </div>
+        </div>
+
+        <div class="chartrow">
+          <div class="pcard"><h3>Sales by Product <small>Net sale value</small></h3><div class="bars" id="barsProd"></div></div>
+          <div class="pcard"><h3>Collection by Mode <small>Amount by payment mode</small></h3><div class="bars" id="barsPay"></div></div>
+        </div>
+
+        <div class="pcard" id="dailyPanel" style="display:none">
+          <h3>Daily Sales <small>Per-day breakdown for the selected period</small></h3>
+          <table><thead><tr><th>Date</th><th>Net Qty</th><th>Sales Due</th><th>Collection</th><th>Short / Excess</th><th>Trend</th></tr></thead><tbody id="dailyBody"></tbody></table>
+        </div>
+
+        <div class="twocol">
+          <div class="pcard"><h3>CA Performance</h3>
+            <table><thead><tr><th>CA</th><th>Shifts</th><th>Net Qty</th><th>Sales Due</th><th>Collection</th><th>Short / Excess</th></tr></thead><tbody id="dashCAs"></tbody></table>
+          </div>
+          <div class="pcard"><h3>Short / Excess Alerts</h3>
+            <table><thead><tr><th>Date</th><th>CA</th><th>Du</th><th>Amount</th></tr></thead><tbody id="dashAlerts"></tbody></table>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+  </div>
+</div>
+
+<!-- allocation modal -->
+<div class="modal" id="allocModal"><div class="box">
+  <h3 id="allocTitle">Assign Dispenser</h3>
+  <div class="c">
+    <div class="grid g2">
+      <div><label id="aLabA">Side A — Nozzles 1 &amp; 3</label><select id="aCAA"></select></div>
+      <div><label id="aLabB">Side B — Nozzles 2 &amp; 4</label><select id="aCAB"></select></div>
+    </div>
+    <div style="height:10px"></div>
+    <div class="grid g2">
+      <div><label>Shift</label><select id="aShift"><option value="S1">S1</option><option value="S2">S2</option></select></div>
+      <div><label>Shift Leader (you)</label><input id="aLeader" readonly></div>
+    </div>
+    <div class="err" id="aErr"></div>
+  </div>
+  <div class="a"><button class="sec" id="aCancel" style="background:#eee">Cancel</button><button id="aSave" style="background:var(--good);color:#fff">Save allocation</button></div>
+</div></div>
+
+<div class="modal" id="msg"><div class="box"><h3 id="msgT">Done</h3><div class="c" id="msgB"></div><div class="a"><button id="msgOk" style="background:var(--good);color:#fff">OK</button></div></div></div>
+
+<script>
+var WEB_APP_URL="https://script.google.com/macros/s/AKfycbxtlsiv4upVm05ovhOA2Uzoc5ctnDG7SuQij91AkBLj7x3aiz-Z74zdTtcq902b1Vsm/exec";
+function $(id){return document.getElementById(id);}
+function call(action,data){var pl={action:action};if(data)for(var k in data)pl[k]=data[k];
+  return fetch(WEB_APP_URL,{method:"POST",body:JSON.stringify(pl)}).then(function(r){return r.json();});}
+function money(n){return "₹"+(Number(n)||0).toLocaleString("en-IN",{minimumFractionDigits:2,maximumFractionDigits:2});}
+function num(n){return (Number(n)||0).toLocaleString("en-IN",{minimumFractionDigits:2,maximumFractionDigits:2});}
+function round2(n){return Math.round((Number(n)+Number.EPSILON)*100)/100;}
+function evalSum(s){if(s==null)return 0;s=String(s).replace(/\s/g,"");if(s==="")return 0;var p=s.split("+"),t=0;for(var i=0;i<p.length;i++){if(p[i]==="")continue;var v=parseFloat(p[i]);if(isNaN(v))return 0;t+=v;}return t;}
+function today(){var d=new Date(),p=function(x){return String(x).padStart(2,"0");};return d.getFullYear()+"-"+p(d.getMonth()+1)+"-"+p(d.getDate());}
+function daysAgo(n){var d=new Date();d.setDate(d.getDate()-n);var p=function(x){return String(x).padStart(2,"0");};return d.getFullYear()+"-"+p(d.getMonth()+1)+"-"+p(d.getDate());}
+function prodName(p){return p==="MS"?"Petrol":(p==="HS"?"Diesel":(p==="CNG"?"CNG":p));}
+function msg(t,h){$("msgT").textContent=t;$("msgB").innerHTML=h;$("msg").classList.add("open");}
+$("msgOk").onclick=function(){$("msg").classList.remove("open");};
+
+var PREVIEW=false, REPORT_FINALIZED=false;
+var S={name:"",cas:[],pickedCA:"",allocs:[]};
+
+/* ---- login ---- */
+/* ---- exit guard: confirm before Back/close so in-progress data isn't lost ---- */
+var EXIT_GUARD=false;
+function _exitOnPop(){ if(window.confirm("Do you want to exit?\nAny unsaved data on this screen will be lost.")){ EXIT_GUARD=false; window.removeEventListener("beforeunload",_exitOnUnload); history.back(); } else { history.pushState(null,""); } }
+function _exitOnUnload(e){ if(!EXIT_GUARD) return; e.preventDefault(); e.returnValue=""; return ""; }
+function armExitGuard(){ if(EXIT_GUARD) return; EXIT_GUARD=true; try{history.pushState(null,"");}catch(e){} window.addEventListener("popstate",_exitOnPop); window.addEventListener("beforeunload",_exitOnUnload); }
+function disarmExitGuard(){ EXIT_GUARD=false; window.removeEventListener("popstate",_exitOnPop); window.removeEventListener("beforeunload",_exitOnUnload); }
+$("loginBtn").addEventListener("click",doLogin);
+$("p").addEventListener("keydown",function(e){if(e.key==="Enter")doLogin();});
+function doLogin(){
+  var u=$("u").value.trim(),p=$("p").value;if(!u||!p){$("loginErr").textContent="Enter username and password.";return;}
+  var b=$("loginBtn");b.disabled=true;b.innerHTML='<span class="spin"></span> Checking…';$("loginErr").textContent="";
+  call("login",{username:u,password:p}).then(function(res){
+    b.disabled=false;b.textContent="Log in";
+    if(!res||!res.ok){$("loginErr").textContent=(res&&res.error)||"Login failed";return;}
+    if(String(res.role).toUpperCase()!=="SUPERVISOR"){$("loginErr").textContent="Not a supervisor account. Use the CA app instead.";return;}
+    S.name=res.name;$("who").innerHTML='<span>'+res.name+'</span><button id="logout">Logout</button>';
+    $("logout").onclick=function(){disarmExitGuard();location.reload();};
+    $("loginScreen").classList.add("hide");$("app").classList.remove("hide");
+    boot(); armExitGuard();
+  }).catch(function(e){b.disabled=false;b.textContent="Log in";$("loginErr").textContent="Network error: "+(e&&e.message?e.message:e);});
+}
+
+/* ---- nav ---- */
+function nav(which){
+  $("navDisp").classList.toggle("sel",which==="disp");$("navRate").classList.toggle("sel",which==="rate");$("navRep").classList.toggle("sel",which==="rep");$("navDash").classList.toggle("sel",which==="dash");
+  $("dispView").classList.toggle("hide",which!=="disp");$("rateView").classList.toggle("hide",which!=="rate");$("repView").classList.toggle("hide",which!=="rep");$("dashView").classList.toggle("hide",which!=="dash");
+  var mainEl=document.querySelector(".main"); if(mainEl) mainEl.classList.toggle("wide", which==="dash");
+  if(which==="dash") startDashAuto(); else stopDashAuto();
+}
+$("navDisp").onclick=function(){nav("disp");renderDispensers();};
+$("navRate").onclick=function(){nav("rate");loadRates();};
+$("navRep").onclick=function(){nav("rep");renderCAList();};
+$("navDash").onclick=function(){nav("dash");loadDashboard();};
+
+function boot(){
+  $("allocDate").value=today();$("repDate").value=today();$("dashFrom").value=today();$("dashTo").value=today();setActivePreset("today");
+  buildCollBox();buildInterim();buildDenom();
+  renderDispensers();                                            /* draw dispensers immediately on arrival */
+  call("listCAs",{}).then(function(res){S.cas=(res&&res.cas)||[];});
+  $("allocDate").addEventListener("change",renderDispensers);
+  $("repDate").addEventListener("change",renderCAList);
+}
+
+/* ---- DISPENSERS ---- */
+function pumpSVG(){return '<svg width="40" height="46" viewBox="0 0 40 46"><rect x="6" y="6" width="20" height="34" rx="3" fill="#0b5d3b"/><rect x="9" y="10" width="14" height="10" rx="2" fill="#bfe7d3"/><rect x="9" y="24" width="14" height="3" rx="1.5" fill="#9fd8bd"/><rect x="9" y="29" width="10" height="3" rx="1.5" fill="#9fd8bd"/><path d="M26 14 h4 a3 3 0 0 1 3 3 v12 a3 3 0 0 0 3 3" fill="none" stroke="#f5a623" stroke-width="3"/><rect x="4" y="40" width="24" height="4" rx="2" fill="#08482e"/></svg>';}
+function drawDisp_(map){
+  var g=$("dispGrid");g.innerHTML="";
+  for(var n=1;n<=6;n++){
+    var prod=(n>=5)?"CNG":"MS / HSD";var s=map[String(n)]||{};var A=s.A,B=s.B;var any=A||B;
+    function line(side,X,nz){return X?('<b>'+X.caName+'</b> <span style="color:var(--muted)">N'+nz+' &middot; '+X.shift+'</span>'):('<span style="color:var(--muted)">'+side+' (N'+nz+') free</span>');}
+    var asHtml, clears="";
+    if(n>=5){ asHtml=A?('<b>'+A.caName+'</b> <span style="color:var(--muted)">N1,2 &middot; '+A.shift+'</span>'):'Tap to assign';
+      if(A) clears='<button class="clrbtn" data-du="'+n+'" data-side="A">✕ Clear '+A.caName+'</button>'; }
+    else { asHtml=any?(line('A',A,'1,3')+'<br>'+line('B',B,'2,4')):'Tap to assign both sides';
+      if(A) clears+='<button class="clrbtn" data-du="'+n+'" data-side="A">✕ Clear A · '+A.caName+'</button>';
+      if(B) clears+='<button class="clrbtn" data-du="'+n+'" data-side="B">✕ Clear B · '+B.caName+'</button>'; }
+    var d=document.createElement("div");d.className="disp"+(any?" assigned":"");d.dataset.du=n;
+    d.innerHTML='<div class="no">'+n+'</div>'+pumpSVG()+'<div class="pr">'+prod+'</div><div class="as">'+asHtml+'</div>'+(clears?'<div class="clrwrap">'+clears+'</div>':'');
+    d.onclick=(function(num,sd){return function(){openAlloc(num,sd);};})(n,s);
+    g.appendChild(d);
+  }
+  [].forEach.call(g.querySelectorAll(".clrbtn"),function(btn){
+    btn.addEventListener("click",function(e){ e.stopPropagation(); clearAlloc(btn.dataset.du, btn.dataset.side); });
+  });
+}
+function clearAlloc(du,side){
+  var who="";
+  (S.allocs||[]).forEach(function(a){ if(String(a.du)===String(du) && String(a.side).toUpperCase()===String(side).toUpperCase()) who=a.caName; });
+  if(!window.confirm("Clear "+(who?who+"\u2019s ":"")+"allocation on Dispenser "+du+" (Side "+side+")?\nThe CA will no longer see this shift in their app.")) return;
+  call("clearAllocation",{date:$("allocDate").value,du:du,side:side}).then(function(res){
+    if(res&&res.ok===false){ msg("Could not clear", res.error||"unknown"); return; }
+    renderDispensers();
+  }).catch(function(e){ msg("Could not clear", (e&&e.message)||e); });
+}
+function renderDispensers(){
+  var date=$("allocDate").value;
+  drawDisp_({});                 /* show the 6 dispensers instantly, before the network call */
+  call("getAllocations",{date:date}).then(function(res){
+    S.allocs=(res&&res.allocations)||[];
+    var map={};S.allocs.forEach(function(a){var k=String(a.du);if(!map[k])map[k]={};map[k][String(a.side||'A').toUpperCase()]=a;});
+    drawDisp_(map);
+  }).catch(function(){});
+}
+function openAlloc(du,sides){
+  sides=sides||{};var cng=(du>=5);
+  $("allocTitle").textContent="Assign Dispenser "+du+(cng?" (CNG)":" (MS / HSD)");
+  var thisDu=String(du), takenElsewhere={};
+  (S.allocs||[]).forEach(function(a){ if(String(a.du)!==thisDu) takenElsewhere[String(a.caName).trim().toLowerCase()]=String(a.du); });
+  var avail=S.cas.filter(function(c){ return !takenElsewhere[String(c).trim().toLowerCase()]; });
+  var opts='<option value="">— none —</option>'+avail.map(function(c){return '<option>'+c+'</option>';}).join("");
+  $("aCAA").innerHTML=opts;$("aCAB").innerHTML=opts;
+  var A=sides.A,B=sides.B;
+  if(cng){
+    $("aLabA").innerHTML="CA — both CNG nozzles (N1 &amp; N2)";
+    $("aLabB").parentNode.style.display="none";
+    $("aCAA").value=A?A.caName:"";
+  }else{
+    $("aLabA").innerHTML="Side A — Nozzles 1 &amp; 3";
+    $("aLabB").innerHTML="Side B — Nozzles 2 &amp; 4";
+    $("aLabB").parentNode.style.display="";
+    $("aCAA").value=A?A.caName:"";$("aCAB").value=B?B.caName:"";
+  }
+  $("aShift").value=(A&&A.shift)||(B&&B.shift)||"S1";$("aLeader").value=S.name||"";   /* shift leader = the logged-in supervisor */
+  $("aErr").textContent="";$("allocModal").dataset.du=du;$("allocModal").dataset.cng=cng?"1":"";$("allocModal").classList.add("open");
+}
+$("aCancel").onclick=function(){$("allocModal").classList.remove("open");};
+$("aSave").onclick=function(){
+  var du=$("allocModal").dataset.du,cng=$("allocModal").dataset.cng==="1";
+  var caA=$("aCAA").value,caB=cng?"":$("aCAB").value,shift=$("aShift").value,leader=$("aLeader").value;
+  if(!caA && !caB){$("aErr").textContent=cng?"Pick a CA.":"Pick a CA for at least one side.";return;}
+  var thisDu=String(du), conflict="";
+  (S.allocs||[]).forEach(function(a){ if(String(a.du)!==thisDu){
+    var an=String(a.caName).trim().toLowerCase();
+    if(caA && an===caA.trim().toLowerCase()) conflict=conflict||(caA+" is already on Dispenser "+a.du);
+    if(caB && an===caB.trim().toLowerCase()) conflict=conflict||(caB+" is already on Dispenser "+a.du);
+  }});
+  if(conflict){$("aErr").textContent=conflict+". A CA can be at only one dispenser per day.";return;}
+  var b=$("aSave");b.disabled=true;b.innerHTML='<span class="spin"></span> Saving…';
+  var calls=[];
+  if(caA)calls.push(call("saveAllocation",{date:$("allocDate").value,du:du,side:"A",shift:shift,caName:caA,shiftLeader:leader}));
+  if(caB)calls.push(call("saveAllocation",{date:$("allocDate").value,du:du,side:"B",shift:shift,caName:caB,shiftLeader:leader}));
+  Promise.all(calls).then(function(reslist){b.disabled=false;b.textContent="Save allocation";
+    var failed=(reslist||[]).filter(function(r){return r&&r.ok===false;});
+    if(failed.length){$("aErr").textContent=failed[0].error||"Could not save allocation.";renderDispensers();return;}
+    $("allocModal").classList.remove("open");renderDispensers();})
+    .catch(function(e){b.disabled=false;b.textContent="Save allocation";$("aErr").textContent=(e&&e.message)||e;});
+};
+
+/* ---- RATES ---- */
+function loadRates(){if(PREVIEW){$("rMS").value="106.00";$("rHS").value="95.00";$("rCNG").value="91.00";return;}call("getRates",{}).then(function(res){var r=(res&&res.rates)||{};$("rMS").value=r.MS||"";$("rHS").value=r.HS||"";$("rCNG").value=r.CNG||"";});}
+$("saveRates").onclick=function(){
+  if(PREVIEW){$("rateMsg").textContent="Preview — not saved";return;}
+  var b=$("saveRates");b.disabled=true;b.innerHTML='<span class="spin"></span> Saving…';$("rateMsg").textContent="";
+  call("setRates",{MS:parseFloat($("rMS").value)||0,HS:parseFloat($("rHS").value)||0,CNG:parseFloat($("rCNG").value)||0}).then(function(res){
+    b.disabled=false;b.textContent="🔒 Set & Lock Rates";$("rateMsg").textContent=res&&res.ok?"Saved & locked ✓":"Failed";
+  }).catch(function(e){b.disabled=false;b.textContent="🔒 Set & Lock Rates";$("rateMsg").textContent="Error";});
+};
+
+/* ---- DASHBOARD (live from the sheet · any date range · auto-refresh) ---- */
+var DASH_TIMER=null, CUR_PRESET="today";
+var PRESET_TAG={today:"Today",yesterday:"Yesterday",week:"This Week",month:"This Month",fy:"This FY",lastfy:"Last FY",lifetime:"Lifetime",custom:"Range"};
+var MON_=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+function fmtDMY(x){ if(!x)return ""; var a=String(x).split("-"); if(a.length<3)return x; return (+a[2])+" "+MON_[(+a[1])-1]+" "+a[0]; }
+function monthStart_(){ var d=new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-01"; }
+function fyBounds_(which){ var d=new Date(), y=d.getFullYear(), m=d.getMonth()+1; var sy=(m>=4)?y:y-1; if(which==="last")sy-=1; return {s:sy+"-04-01", e:(sy+1)+"-03-31"}; }
+function periodLabel_(f,t){ if(CUR_PRESET==="lifetime")return "Lifetime"; if(f===t)return fmtDMY(f); return fmtDMY(f)+" \u2013 "+fmtDMY(t); }
+function setActivePreset(pp){ if(!$("dashPresets"))return; [].forEach.call($("dashPresets").children,function(b){ b.classList.toggle("sel", b.dataset.p===pp); }); }
+function applyPreset(pp){
+  var f,t,tod=today();
+  if(pp==="today"){f=t=tod;}
+  else if(pp==="yesterday"){f=t=daysAgo(1);}
+  else if(pp==="week"){f=daysAgo(6);t=tod;}
+  else if(pp==="month"){f=monthStart_();t=tod;}
+  else if(pp==="fy"){f=fyBounds_("this").s;t=tod;}
+  else if(pp==="lastfy"){var b=fyBounds_("last");f=b.s;t=b.e;}
+  else if(pp==="lifetime"){f="2000-01-01";t="2999-12-31";}
+  else {return;}
+  CUR_PRESET=pp; $("dashFrom").value=f; $("dashTo").value=t; setActivePreset(pp); loadDashboard();
+}
+function num0(n){return Number(n)||0;}
+function signedMoney(n){n=round2(n);return (n>=0?"+":"-")+money(Math.abs(n));}
+function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];});}
+function emptyRow(cols,text){return '<tr><td colspan="'+cols+'" style="color:var(--muted)">'+text+'</td></tr>';}
+function litres(n){return num(n)+" L";}
+function kfmt(n){n=Number(n)||0;var s=n<0?"-":"";n=Math.abs(n);
+  if(n>=1e7)return s+(n/1e7).toFixed(2)+"Cr";if(n>=1e5)return s+(n/1e5).toFixed(2)+"L";if(n>=1e3)return s+(n/1e3).toFixed(1)+"k";return s+num(n);}
+var PAYDEF=[["cash","Cash in Hand","#0b8a4a"],["card","Credit Card","#2b6cff"],["paytm","Paytm","#7b3ff2"],
+  ["fleetCard","Fleet Card","#f5a623"],["mlaCoupon","MLA Coupon","#e0556b"],["insRedeem","Ins Redeem","#13b1c9"]];
+
+function donutSVG(ratio){
+  ratio=Number(ratio)||0;
+  var frac=Math.max(0,Math.min(1,ratio));
+  var pct=Math.round(ratio*100); if(pct>=100&&ratio<1)pct=99; if(pct>100)pct=100;
+  var r=46,c=2*Math.PI*r,off=c*(1-frac);
+  return '<svg width="120" height="120" viewBox="0 0 120 120">'+
+    '<circle cx="60" cy="60" r="'+r+'" fill="none" stroke="#eef2f4" stroke-width="16"/>'+
+    '<circle cx="60" cy="60" r="'+r+'" fill="none" stroke="#0b8a4a" stroke-width="16" stroke-linecap="round" '+
+      'stroke-dasharray="'+c.toFixed(1)+'" stroke-dashoffset="'+off.toFixed(1)+'" transform="rotate(-90 60 60)"/>'+
+    '<text x="60" y="57" text-anchor="middle" font-size="20" font-weight="800" fill="#13232b">'+pct+'%</text>'+
+    '<text x="60" y="74" text-anchor="middle" font-size="9" fill="#637480">collected</text></svg>';
+}
+function barChart(el,items,colorFn){
+  var max=0;items.forEach(function(x){max=Math.max(max,num0(x.value));});
+  el.innerHTML=items.length?items.map(function(x,i){
+    var h=max>0?Math.max(3,Math.round(num0(x.value)*150/max)):3;
+    return '<div class="barcol"><div class="bv">&#8377;'+kfmt(x.value)+'</div>'+
+      '<div class="br" style="height:'+h+'px;background:'+(colorFn?colorFn(i,x):'var(--brand)')+'"></div>'+
+      '<div class="bk">'+esc(x.label)+'</div></div>';
+  }).join(""):'<div style="color:var(--muted);font-size:13px;align-self:center;margin:auto">No data for this day.</div>';
+}
+function previewDashboardData(){
+  var f=$("dashFrom").value||today(), t=$("dashTo").value||f;
+  /* No demo data — the dashboard is built ONLY from the Google Sheet.
+     This empty skeleton just shows the layout when not logged in. */
+  return {ok:true,startDate:f,endDate:t,
+    totals:{salesValueDue:0,totalCollection:0,shortExcess:0,cash:0,card:0,paytm:0,fleetCard:0,mlaCoupon:0,insRedeem:0,netQty:0,grossVolume:0,nozzleTest:0,submissions:0},
+    byProduct:[],byCA:[],byDate:[],alerts:[],recent:[]};
+}
+function renderDashboard(d){
+  var t=d.totals||{}, se=round2(t.shortExcess||0);
+  var net=num0(t.netQty), test=num0(t.nozzleTest);
+  var gross=(t.grossVolume!=null)?num0(t.grossVolume):round2(net+test);
+  var sales=num0(t.salesValueDue), coll=num0(t.totalCollection), shifts=num0(t.submissions);
+  /* hero cards */
+  $("hSalesBadge").textContent=(PRESET_TAG[CUR_PRESET]||"Range");
+  $("dashNote").style.display=(shifts===0?"":"none");
+  if(shifts===0)$("dashNote").textContent="No finalized data for this period yet. Pick another date or range, or finalize a CA\u2019s DCR to populate it.";
+  $("hSales").textContent=money(sales);
+  $("hColl").textContent=money(coll);
+  $("hDiff").textContent=signedMoney(se);
+  $("hDiff").className="val "+(se<0?"bad":(se>0?"good":""));
+  $("hDiffBadge").textContent=se<0?"Short":(se>0?"Excess":"Tallied");
+  $("hDiffBadge").className="badge "+(se<0?"warn":(se>0?"info":""));
+  $("hShifts").textContent=shifts+" shift"+(shifts===1?"":"s");
+  /* volume */
+  $("vGross").textContent=litres(gross);$("vTest").textContent=litres(test);
+  $("vNet").textContent=litres(net);$("vShifts").textContent=shifts;
+  /* payment modes */
+  $("payList").innerHTML=PAYDEF.map(function(p){
+    return '<div class="pay"><span class="nm"><span class="sw" style="background:'+p[2]+'"></span>'+p[1]+'</span><span class="am">'+money(num0(t[p[0]]))+'</span></div>';
+  }).join("");
+  $("payTot").textContent=money(coll);
+  /* donut: collected vs sales */
+  var frac=sales>0?coll/sales:(coll>0?1:0);
+  $("donut").innerHTML=donutSVG(frac);
+  $("donutLeg").innerHTML=
+    '<div><span class="nm"><span class="sw" style="background:#0b8a4a"></span>Sales</span><b>'+money(sales)+'</b></div>'+
+    '<div><span class="nm"><span class="sw" style="background:#2b6cff"></span>Collection</span><b>'+money(coll)+'</b></div>'+
+    '<div><span class="nm"><span class="sw" style="background:'+(se<0?'#c0392b':'#637480')+'"></span>Difference</span><b>'+signedMoney(se)+'</b></div>';
+  /* product value bars */
+  var prodColors=["#2b6cff","#e0556b","#0b8a4a","#f5a623"];
+  barChart($("barsProd"),(d.byProduct||[]).map(function(x){return {label:prodName(x.product),value:num0(x.salesValueDue)};}),
+    function(i){return prodColors[i%prodColors.length];});
+  /* payment-mode bars */
+  barChart($("barsPay"),PAYDEF.map(function(p){return {label:p[1].split(" ")[0],value:num0(t[p[0]])};}).filter(function(x){return x.value>0;}),
+    function(i,x){var f=PAYDEF.filter(function(p){return num0(t[p[0]])>0;})[i];return f?f[2]:"#0b5d3b";});
+  /* tables */
+  $("dashCAs").innerHTML=(d.byCA&&d.byCA.length)?d.byCA.map(function(x){return '<tr><td>'+esc(x.caName)+'</td><td>'+num(x.shifts||0)+'</td><td>'+num(x.netQty)+'</td><td>'+money(x.salesValueDue)+'</td><td>'+money(x.totalCollection)+'</td><td>'+signedMoney(x.shortExcess)+'</td></tr>';}).join(""):emptyRow(6,"No CA totals for this period.");
+  $("dashAlerts").innerHTML=(d.alerts&&d.alerts.length)?d.alerts.map(function(x){return '<tr><td>'+esc(x.date)+'</td><td>'+esc(x.caName)+'</td><td>'+esc(x.du)+'</td><td>'+signedMoney(x.shortExcess)+'</td></tr>';}).join(""):emptyRow(4,"No short/excess alerts.");
+  /* daily breakdown for multi-day ranges */
+  var bd=(d.byDate||[]);
+  if(bd.length>1){
+    $("dailyPanel").style.display="";
+    var maxv=0;bd.forEach(function(x){maxv=Math.max(maxv,num0(x.salesValueDue));});
+    $("dailyBody").innerHTML=bd.map(function(x){var w=maxv>0?Math.max(3,Math.round(num0(x.salesValueDue)*100/maxv)):0;
+      return '<tr><td>'+esc(x.date)+'</td><td>'+num(x.netQty)+'</td><td>'+money(x.salesValueDue)+'</td><td>'+money(x.totalCollection)+'</td><td>'+signedMoney(x.shortExcess)+'</td><td><div class="bar"><i style="width:'+w+'%"></i></div></td></tr>';
+    }).join("");
+  } else { $("dailyPanel").style.display="none"; }
+}
+function loadDashboard(){
+  if(!$("dashFrom").value)$("dashFrom").value=today();
+  if(!$("dashTo").value)$("dashTo").value=$("dashFrom").value;
+  var f=$("dashFrom").value, t=$("dashTo").value;
+  if(f>t){ var x=f; f=t; t=x; $("dashFrom").value=f; $("dashTo").value=t; }
+  $("dashPeriod").textContent="Showing: "+periodLabel_(f,t);
+  $("dashErr").textContent="";
+  var b=$("dashRefresh");b.disabled=true;b.innerHTML='<span class="spin"></span> Loading…';
+  call("getDashboard",{startDate:f,endDate:t}).then(function(res){
+    b.disabled=false;b.innerHTML="&#8635; Refresh";
+    if(!res||!res.ok){$("dashErr").textContent=(res&&res.error)||"Could not load dashboard. If you just updated the script, redeploy Code.gs (New version).";renderDashboard(previewDashboardData());return;}
+    renderDashboard(res);
+  }).catch(function(e){b.disabled=false;b.innerHTML="&#8635; Refresh";$("dashErr").textContent="Could not reach the sheet: "+(e&&e.message?e.message:e);renderDashboard(previewDashboardData());});
+}
+function startDashAuto(){ stopDashAuto(); DASH_TIMER=setInterval(function(){ if(!$("dashView").classList.contains("hide")) loadDashboard(); }, 60000); }
+function stopDashAuto(){ if(DASH_TIMER){ clearInterval(DASH_TIMER); DASH_TIMER=null; } }
+$("dashRefresh").onclick=function(){loadDashboard();};
+$("dashFrom").addEventListener("change",function(){CUR_PRESET="custom";setActivePreset("custom");loadDashboard();});
+$("dashTo").addEventListener("change",function(){CUR_PRESET="custom";setActivePreset("custom");loadDashboard();});
+[].forEach.call($("dashPresets").children,function(btn){ btn.onclick=function(){ applyPreset(btn.dataset.p); }; });
+
+/* ---- COLLECTION REPORT ---- */
+function renderCAList(){
+  var l=$("caList");l.innerHTML="";S.pickedCA="";$("repBody").classList.add("hide");$("repEmpty").classList.remove("hide");
+  S.cas.forEach(function(c){var btn=document.createElement("button");btn.textContent=c;btn.onclick=function(){pickCA(c,btn);};l.appendChild(btn);});
+}
+function rowVal_(tr){
+  var vol=parseFloat(tr.dataset.vol)||0, rate=parseFloat(tr.dataset.rate)||0;
+  if(REPORT_FINALIZED){
+    var fnet=parseFloat(tr.dataset.net)||0, fval=parseFloat(tr.dataset.val)||0;
+    var nvf=tr.querySelector(".netvol"); if(nvf) nvf.textContent=num(fnet);
+    var vvf=tr.querySelector(".nval"); if(vvf) vvf.textContent=num(fval);
+    return fval;
+  }
+  var ti=tr.querySelector(".ntest"); var test=ti?(parseFloat(ti.value)||0):(parseFloat(tr.dataset.test)||0);
+  var net=round2(vol-test), val=round2(net*rate);
+  var nv=tr.querySelector(".netvol"); if(nv) nv.textContent=num(net);
+  var vv=tr.querySelector(".nval"); if(vv) vv.textContent=num(val);
+  return val;
+}
+function recomputeReadings(){
+  var due=0; $("readBody").querySelectorAll("tr[data-key]").forEach(function(tr){ due+=rowVal_(tr); });
+  $("dueVal").textContent=money(due); $("repBody").dataset.due=round2(due); recalcColl();
+}
+function renderReport_(res){
+  var noz=(res&&res.nozzles)||[];
+  REPORT_FINALIZED=!!(res&&res.finalized);
+  var tb=$("readBody");tb.innerHTML="";
+  if(noz.length===0){tb.innerHTML='<tr><td colspan="11" style="color:var(--muted)">No readings for this CA on this date.</td></tr>';}
+  noz.forEach(function(n){
+    var net=(n.net!=null?n.net:n.volume);
+    var ph=(n.openingPhoto?'<a class="ph" href="'+n.openingPhoto+'" target="_blank">Open</a>':'')+(n.closingPhoto?' <a class="ph" href="'+n.closingPhoto+'" target="_blank">Close</a>':'');
+    var testCell=REPORT_FINALIZED ? num(n.test||0)
+      : '<input class="ntest" type="number" step="0.01" min="0" value="'+(n.test||0)+'" style="width:80px;text-align:center;padding:6px">';
+    tb.innerHTML+='<tr data-key="'+(n.key||'')+'" data-vol="'+n.volume+'" data-rate="'+n.rate+'" data-test="'+(n.test||0)+'" data-net="'+net+'" data-val="'+n.value+'">'+
+      '<td>Du'+n.du+' / N'+n.nozzleNo+'</td><td>'+n.product+' ('+prodName(n.product)+')</td>'+
+      '<td>'+num(n.opening)+'</td><td>'+num(n.closing)+'</td><td>'+num(n.volume)+'</td>'+
+      '<td>'+testCell+'</td>'+
+      '<td class="netvol">'+num(net)+'</td><td>'+num(n.rate)+'</td><td class="nval">'+num(n.value)+'</td>'+
+      '<td>'+(ph||'—')+'</td><td>'+(n.verification||'—')+'</td></tr>';
+  });
+  $("repBody").classList.remove("hide");$("repEmpty").classList.add("hide");
+  recomputeReadings();
+  applyFinalizedState(res);
+}
+function applyFinalizedState(res){
+  var fin=!!(res&&res.finalized), c=(res&&res.collection)||null, d=(res&&res.denomination)||null, its=(res&&res.interim)||[];
+  COLL.forEach(function(cc){ var el=document.querySelector('.coll[data-f="'+cc[0]+'"]'); if(!el)return;
+    el.value=(fin&&c)?(c[cc[0]]||0):""; el.readOnly=fin; });
+  DEN.forEach(function(x){ var el=document.querySelector('.dcount[data-d="'+x+'"]'); if(el){ el.value=(fin&&d)?(d["n"+x]||""):""; el.readOnly=fin; } });
+  if($("coinCount")){ $("coinCount").value=""; $("coinCount").readOnly=fin; }
+  if($("coinAmt")){ $("coinAmt").value=(fin&&d)?(d.coins||""):""; $("coinAmt").readOnly=fin; }
+  var ia=document.querySelectorAll(".intamt"), ib=document.querySelectorAll(".intby");
+  for(var i=0;i<ia.length;i++){ ia[i].value=(fin&&its[i])?(its[i].amount||""):""; ib[i].value=(fin&&its[i])?(its[i].collectedBy||""):""; ia[i].readOnly=fin; ib[i].readOnly=fin; }
+  var fb=$("finalizeBtn"); if(fb){ fb.disabled=fin; fb.textContent=fin?"\u2713 Already finalized (view only)":"\u2705 Finalize DCR for this CA"; }
+  var nb=$("repFinNote"); if(nb){ nb.style.display=fin?"":"none"; if(fin) nb.textContent="This shift is already finalized \u2014 showing the saved values from the Google Sheet (view only)."; }
+  recalcColl();
+}
+document.getElementById("readBody").addEventListener("input",function(e){ if(e.target&&e.target.classList&&e.target.classList.contains("ntest")) recomputeReadings(); });
+function pickCA(name,btn){
+  S.pickedCA=name;
+  [].forEach.call($("caList").children,function(b){b.classList.toggle("sel",b===btn);});
+  $("repCAName").textContent=name;$("repErr").textContent="";
+  call("getCAReport",{caName:name,date:$("repDate").value}).then(function(res){
+    renderReport_(res||{nozzles:[]});
+  }).catch(function(e){$("repErr").textContent="Could not load readings: "+(e&&e.message?e.message:e);});
+}
+
+var COLL=[["cash","Cash"],["card","Card"],["paytm","Paytm"],["fleetCard","Fleet Card"],["mlaCoupon","MLA Coupon"],["insRedeem","Ins Redeem"]];
+function buildCollBox(){var b=$("collBox");COLL.forEach(function(c){var r=document.createElement("div");r.className="moneyrow";
+  r.innerHTML='<div><label>'+c[1]+'</label><input class="coll" data-f="'+c[0]+'" inputmode="decimal" placeholder="0"></div><div><label>Amount</label><input readonly id="cv_'+c[0]+'" value="0.00"></div>';
+  b.appendChild(r);});b.addEventListener("input",recalcColl);}
+function buildInterim(){var b=$("intBox");for(var i=1;i<=6;i++){var r=document.createElement("div");r.className="moneyrow";r.style.gridTemplateColumns="30px 1fr 1fr";
+  r.innerHTML='<div style="align-self:center;text-align:center;font-weight:700;color:var(--muted)">'+i+'</div><input class="intamt" inputmode="decimal" placeholder="amount"><input class="intby" placeholder="collected by">';b.appendChild(r);}b.addEventListener("input",recalcColl);}
+var DEN=[500,200,100,50,20,10];
+function buildDenom(){var b=$("denBody");DEN.forEach(function(d){var tr=document.createElement("tr");
+  tr.innerHTML='<td>'+d+'</td><td><input class="dcount" data-d="'+d+'" type="number" min="0" placeholder="0" style="text-align:center"></td><td class="amt" id="da_'+d+'">0.00</td>';b.appendChild(tr);});
+  var tr=document.createElement("tr");tr.innerHTML='<td>Coins</td><td><input id="coinCount" type="number" min="0" placeholder="0" style="text-align:center"></td><td><input id="coinAmt" type="number" step="0.01" placeholder="0" style="text-align:center"></td>';b.appendChild(tr);
+  b.addEventListener("input",recalcColl);}
+function recalcColl(){
+  var due=parseFloat($("repBody").dataset.due)||0,total=0;
+  document.querySelectorAll(".coll").forEach(function(el){var v=evalSum(el.value);$("cv_"+el.dataset.f).value=num(v);total+=v;});
+  $("collTot").textContent=money(total);
+  var diff=total-due;$("seVal").textContent=(diff>=0?"+":"−")+num(Math.abs(diff));
+  var it=0;document.querySelectorAll(".intamt").forEach(function(el){it+=evalSum(el.value);});$("intTot").textContent=money(it);
+  var dt=0;DEN.forEach(function(x){var c=parseInt(document.querySelector('.dcount[data-d="'+x+'"]').value)||0;var a=x*c;$("da_"+x).textContent=num(a);dt+=a;});
+  dt+=parseFloat($("coinAmt").value)||0;$("denTot").textContent=num(dt);
+  var cash=evalSum(document.querySelector('.coll[data-f="cash"]').value)||0;
+  setMatch("denMatch","denMatchRow",dt,cash);
+  setMatch("intMatch","intMatchRow",it,cash);
+}
+function setMatch(valId,rowId,amount,cash){
+  var d=round2(amount-cash), el=$(valId), row=$(rowId);
+  if((cash===0)&&(amount===0)){ el.textContent="—"; el.style.color="var(--muted)"; row.classList.remove("warn"); return; }
+  if(Math.abs(d)<0.005){ el.textContent="✓ matches "+money(cash); el.style.color="var(--good)"; row.classList.remove("warn"); }
+  else{ el.textContent=(d>0?"✗ "+money(d)+" over":"✗ "+money(Math.abs(d))+" short")+" (cash "+money(cash)+")"; el.style.color="var(--bad)"; row.classList.add("warn"); }
+}
+
+$("finalizeBtn").onclick=function(){
+  if(PREVIEW){msg("Preview only","Log in to actually finalise the DCR.");return;}
+  if(!S.pickedCA){$("repErr").textContent="Pick a CA first.";return;}
+  var cashChk=evalSum(document.querySelector('.coll[data-f="cash"]').value)||0;
+  var denChk=0;DEN.forEach(function(x){denChk+=x*(parseInt(document.querySelector('.dcount[data-d="'+x+'"]').value)||0);});denChk+=parseFloat($("coinAmt").value)||0;
+  var intChk=0;document.querySelectorAll(".intamt").forEach(function(el){intChk+=evalSum(el.value);});
+  var warns=[];
+  if(Math.abs(round2(denChk-cashChk))>=0.005) warns.push("Denomination "+money(denChk)+" does not match Cash "+money(cashChk));
+  if(Math.abs(round2(intChk-cashChk))>=0.005) warns.push("Interim "+money(intChk)+" does not match Cash "+money(cashChk));
+  if(warns.length && !window.confirm("Cash does not tally:\n- "+warns.join("\n- ")+"\n\nFinalise anyway?")) return;
+  var coll={},total=0;COLL.forEach(function(c){var v=round2(evalSum(document.querySelector('.coll[data-f="'+c[0]+'"]').value));coll[c[0]]=v;total+=v;});coll.total=round2(total);
+  var interim=[],a=document.querySelectorAll(".intamt"),by=document.querySelectorAll(".intby");
+  for(var i=0;i<a.length;i++){var v=round2(evalSum(a[i].value));if(v>0||by[i].value)interim.push({sl:i+1,amount:v,collectedBy:by[i].value||""});}
+  var den={total:0,notes:{}},dt=0;DEN.forEach(function(x){var c=parseInt(document.querySelector('.dcount[data-d="'+x+'"]').value)||0;den.notes["n"+x]={count:c,amount:round2(x*c)};dt+=x*c;});
+  var cc=parseInt($("coinCount").value)||0,ca=parseFloat($("coinAmt").value)||0;den.notes.coins={count:cc,amount:round2(ca)};dt+=ca;den.total=round2(dt);
+  var tests={};
+  $("readBody").querySelectorAll("tr[data-key]").forEach(function(tr){ var ti=tr.querySelector(".ntest"); tests[tr.dataset.key]=ti?(parseFloat(ti.value)||0):0; });
+  var _packed=($("packedAmt")&&$("packedAmt").value!=="")?round2(parseFloat($("packedAmt").value)||0):"";
+  var payload={meta:{date:$("repDate").value,caName:S.pickedCA,shiftLeader:""},collection:coll,interim:interim,denomination:den,tests:tests,packedProducts:_packed};
+  var b=$("finalizeBtn");b.disabled=true;b.innerHTML='<span class="spin"></span> Finalising…';$("repErr").textContent="";
+  call("finalizeDCR",{payload:payload}).then(function(res){b.disabled=false;b.textContent="✅ Finalize DCR for this CA";
+    if(res&&res.ok){msg("✓ DCR finalised","Wrote <b>"+res.rows+"</b> nozzle row(s) for "+S.pickedCA+".<br>Sales Due "+money(res.salesValueDue)+" · Collection "+money(res.totalCollection)+" · Short/Excess "+money(res.shortExcess));pickCA(S.pickedCA,document.querySelector("#caList button.sel"));}
+    else msg("Could not finalise",(res&&res.error)||"unknown");
+  }).catch(function(e){b.disabled=false;b.textContent="✅ Finalize DCR for this CA";$("repErr").textContent=(e&&e.message)||e;});
+};
+</script>
+</body>
+</html>
