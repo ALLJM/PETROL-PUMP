@@ -240,6 +240,10 @@
           <h3 style="margin:0 0 10px">Readings — <span id="repCAName"></span></h3>
           <table id="readTable"><thead><tr><th>Dispenser/Nozzle</th><th>Product</th><th>Opening</th><th>Closing</th><th>Volume (L)</th><th>Nozzle Test (L)</th><th>Net Vol (L)</th><th>Rate</th><th>Value ₹</th><th>Photos</th><th>CA Verify</th></tr></thead><tbody id="readBody"></tbody></table>
           <div class="tot big"><span>Sales Value Due</span><span id="dueVal">₹0.00</span></div>
+          <div id="editRow" style="margin-top:12px;display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+            <button type="button" id="editReadingsBtn" style="padding:10px 16px;border-radius:10px;border:1px solid var(--line,#ccc);background:#fff;font-weight:700;cursor:pointer">✏️ Edit CA readings</button>
+            <span id="editHint" style="font-size:12px;color:var(--muted)">Override wrong Opening/Closing values uploaded by the CA. Nozzle Test stays supervisor-entered.</span>
+          </div>
         </div>
 
         <div class="panel">
@@ -668,6 +672,9 @@ function rowVal_(tr){
     var vvf=tr.querySelector(".nval"); if(vvf) vvf.textContent=num(fval);
     return fval;
   }
+  var oi=tr.querySelector('.oedit[data-role="open"]'), ci=tr.querySelector('.oedit[data-role="close"]');
+  if(oi&&ci){ vol=round2((parseFloat(ci.value)||0)-(parseFloat(oi.value)||0)); tr.dataset.vol=vol;
+    var vc=tr.querySelector(".volcell"); if(vc) vc.textContent=num(vol); }
   var ti=tr.querySelector(".ntest"); var test=ti?(parseFloat(ti.value)||0):(parseFloat(tr.dataset.test)||0);
   var net=round2(vol-test), val=round2(net*rate);
   var nv=tr.querySelector(".netvol"); if(nv) nv.textContent=num(net);
@@ -690,7 +697,9 @@ function renderReport_(res){
       : '<input class="ntest" type="number" step="0.01" min="0" value="'+(n.test||0)+'" style="width:80px;text-align:center;padding:6px">';
     tb.innerHTML+='<tr data-key="'+(n.key||'')+'" data-vol="'+n.volume+'" data-rate="'+n.rate+'" data-test="'+(n.test||0)+'" data-net="'+net+'" data-val="'+n.value+'">'+
       '<td>Du'+n.du+' / N'+n.nozzleNo+'</td><td>'+n.product+' ('+prodName(n.product)+')</td>'+
-      '<td>'+num(n.opening)+'</td><td>'+num(n.closing)+'</td><td>'+num(n.volume)+'</td>'+
+      '<td>'+(REPORT_FINALIZED?num(n.opening):'<input class="oedit" data-role="open" type="number" step="0.01" value="'+n.opening+'" data-orig="'+n.opening+'" readonly style="width:92px;text-align:center;padding:6px">')+'</td>'+
+      '<td>'+(REPORT_FINALIZED?num(n.closing):'<input class="oedit" data-role="close" type="number" step="0.01" value="'+n.closing+'" data-orig="'+n.closing+'" readonly style="width:92px;text-align:center;padding:6px">')+'</td>'+
+      '<td class="volcell">'+num(n.volume)+'</td>'+
       '<td>'+testCell+'</td>'+
       '<td class="netvol">'+num(net)+'</td><td>'+num(n.rate)+'</td><td class="nval">'+num(n.value)+'</td>'+
       '<td>'+(ph||'—')+'</td><td>'+(n.verification||'—')+'</td></tr>';
@@ -701,6 +710,9 @@ function renderReport_(res){
 }
 function applyFinalizedState(res){
   var fin=!!(res&&res.finalized), c=(res&&res.collection)||null, d=(res&&res.denomination)||null, its=(res&&res.interim)||[];
+  var er=$("editRow"); if(er) er.style.display=fin?"none":"";
+  var eb0=$("editReadingsBtn"); if(eb0){ eb0.disabled=fin; eb0.dataset.on=""; eb0.textContent="✏️ Edit CA readings"; }
+  var eh0=$("editHint"); if(eh0) eh0.textContent="Override wrong Opening/Closing values uploaded by the CA. Nozzle Test stays supervisor-entered.";
   COLL.forEach(function(cc){ var el=document.querySelector('.coll[data-f="'+cc[0]+'"]'); if(!el)return;
     el.value=(fin&&c)?(c[cc[0]]||0):""; el.readOnly=fin; });
   DEN.forEach(function(x){ var el=document.querySelector('.dcount[data-d="'+x+'"]'); if(el){ el.value=(fin&&d)?(d["n"+x]||""):""; el.readOnly=fin; } });
@@ -712,7 +724,7 @@ function applyFinalizedState(res){
   var nb=$("repFinNote"); if(nb){ nb.style.display=fin?"":"none"; if(fin) nb.textContent="This shift is already finalized \u2014 showing the saved values from the Google Sheet (view only)."; }
   recalcColl();
 }
-document.getElementById("readBody").addEventListener("input",function(e){ if(e.target&&e.target.classList&&e.target.classList.contains("ntest")) recomputeReadings(); });
+document.getElementById("readBody").addEventListener("input",function(e){ if(e.target&&e.target.classList&&(e.target.classList.contains("ntest")||e.target.classList.contains("oedit"))) recomputeReadings(); });
 function pickCA(name,btn){
   S.pickedCA=name;
   [].forEach.call($("caList").children,function(b){b.classList.toggle("sel",b===btn);});
@@ -752,6 +764,21 @@ function setMatch(valId,rowId,amount,cash){
   else{ el.textContent=(d>0?"✗ "+money(d)+" over":"✗ "+money(Math.abs(d))+" short")+" (cash "+money(cash)+")"; el.style.color="var(--bad)"; row.classList.add("warn"); }
 }
 
+(function(){ var eb=$("editReadingsBtn"); if(!eb) return;
+  eb.onclick=function(){
+    var inputs=$("readBody").querySelectorAll(".oedit");
+    if(!inputs.length) return;
+    if(eb.dataset.on==="1"){
+      [].forEach.call(inputs,function(i){ i.readOnly=true; i.style.background=""; i.style.borderColor=""; });
+      eb.dataset.on=""; eb.textContent="✏️ Edit CA readings";
+      var eh=$("editHint"); if(eh) eh.textContent="Override wrong Opening/Closing values uploaded by the CA. Nozzle Test stays supervisor-entered.";
+    } else {
+      [].forEach.call(inputs,function(i){ i.readOnly=false; i.style.background="#fff7e6"; i.style.borderColor="var(--accent,#f5a623)"; });
+      eb.dataset.on="1"; eb.textContent="🔓 Editing on — values unlocked";
+      var eh2=$("editHint"); if(eh2) eh2.textContent="Change Opening/Closing; Volume & Value update live. You'll be asked for a reason when you finalize.";
+    }
+  };
+})();
 $("finalizeBtn").onclick=function(){
   if(PREVIEW){msg("Preview only","Log in to actually finalise the DCR.");return;}
   if(!S.pickedCA){$("repErr").textContent="Pick a CA first.";return;}
@@ -770,7 +797,20 @@ $("finalizeBtn").onclick=function(){
   var tests={};
   $("readBody").querySelectorAll("tr[data-key]").forEach(function(tr){ var ti=tr.querySelector(".ntest"); tests[tr.dataset.key]=ti?(parseFloat(ti.value)||0):0; });
   var _packed=($("packedAmt")&&$("packedAmt").value!=="")?round2(parseFloat($("packedAmt").value)||0):"";
-  var payload={meta:{date:$("repDate").value,caName:S.pickedCA,shiftLeader:""},collection:coll,interim:interim,denomination:den,tests:tests,packedProducts:_packed};
+  var readingEdits={},anyEdit=false;
+  $("readBody").querySelectorAll("tr[data-key]").forEach(function(tr){
+    var oi=tr.querySelector('.oedit[data-role="open"]'), ci=tr.querySelector('.oedit[data-role="close"]');
+    if(!oi||!ci) return;
+    if(String(oi.value)!==String(oi.dataset.orig)||String(ci.value)!==String(ci.dataset.orig)){
+      readingEdits[tr.dataset.key]={opening:round2(parseFloat(oi.value)||0),closing:round2(parseFloat(ci.value)||0)}; anyEdit=true;
+    }
+  });
+  var editNote="";
+  if(anyEdit){
+    var why=window.prompt("You changed one or more CA-uploaded readings.\nWhy did you edit them? (leave blank to use the default note)","");
+    editNote=(why&&why.trim())?why.trim():"These readings have been edited by the supervisor.";
+  }
+  var payload={meta:{date:$("repDate").value,caName:S.pickedCA,shiftLeader:""},collection:coll,interim:interim,denomination:den,tests:tests,packedProducts:_packed,readingEdits:readingEdits,editNote:editNote};
   var b=$("finalizeBtn");b.disabled=true;b.innerHTML='<span class="spin"></span> Finalising…';$("repErr").textContent="";
   call("finalizeDCR",{payload:payload}).then(function(res){b.disabled=false;b.textContent="✅ Finalize DCR for this CA";
     if(res&&res.ok){msg("✓ DCR finalised","Wrote <b>"+res.rows+"</b> nozzle row(s) for "+S.pickedCA+".<br>Sales Due "+money(res.salesValueDue)+" · Collection "+money(res.totalCollection)+" · Short/Excess "+money(res.shortExcess));pickCA(S.pickedCA,document.querySelector("#caList button.sel"));}
