@@ -117,12 +117,38 @@
   .livebtns{display:flex;gap:10px;margin-top:14px;flex-wrap:wrap;justify-content:center}
   .livebtns button{padding:13px 20px;border-radius:10px;border:none;font-weight:800;font-size:14px;cursor:pointer}
   .livebtns .ok{background:var(--good);color:#fff}.livebtns .ghost{background:#2a2f36;color:#fff}
+  /* ---- notifications page ---- */
+  .bell-wrap{position:relative;display:inline-flex;align-items:center}
+  .bell-badge{position:absolute;top:-6px;right:-8px;background:var(--bad);color:#fff;border-radius:50%;width:18px;height:18px;font-size:10px;font-weight:700;display:none;align-items:center;justify-content:center;border:2px solid var(--brand)}
+  .bell-badge.show{display:flex}
+  #notifBtn{background:transparent;border:none;color:#fff;font-size:20px;cursor:pointer;padding:4px 6px;line-height:1}
+  .notif-card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:12px;box-shadow:var(--shadow)}
+  .notif-card .notif-amt{font-size:20px;font-weight:800;color:var(--brand);font-family:'Manrope',sans-serif}
+  .notif-card .notif-meta{font-size:12px;color:var(--muted);margin:4px 0 10px}
+  .notif-card .notif-by{font-size:13px;font-weight:600;margin-bottom:12px}
+  .notif-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .notif-actions button{padding:12px;border:none;border-radius:10px;font-weight:800;font-size:14px;cursor:pointer}
+  .notif-approve{background:var(--good);color:#fff}
+  .notif-reject{background:var(--bad);color:#fff}
+  .notif-done{background:var(--soft);border:1px solid var(--line)!important;color:var(--muted);padding:10px;border-radius:10px;font-size:13px;text-align:center;margin-top:2px}
+  .notif-done.approved{background:#e6f7ec;color:var(--good);border-color:var(--good)!important}
+  .notif-done.rejected{background:#fdecea;color:var(--bad);border-color:var(--bad)!important}
+  .reject-note-wrap{margin-top:8px;display:none}
+  .reject-note-wrap.show{display:block}
+  .reject-note-wrap input{width:100%;padding:9px 12px;border:1px solid var(--line);border-radius:8px;font-size:14px;font-family:inherit}
+  .reject-note-wrap button{margin-top:6px;width:100%;padding:10px;border:none;border-radius:8px;background:var(--bad);color:#fff;font-weight:700;font-size:13px;cursor:pointer}
 </style>
 </head>
 <body>
 <header class="app">
   <div><div class="nm">Petrol Retail Outlet (RO)</div><div class="sub">Customer Attendant</div></div>
-  <div class="who" id="who"></div>
+  <div style="display:flex;align-items:center;gap:8px">
+    <div class="bell-wrap" id="bellWrap" style="display:none">
+      <button id="notifBtn" title="Notifications">🔔</button>
+      <span class="bell-badge" id="bellBadge">0</span>
+    </div>
+    <div class="who" id="who"></div>
+  </div>
 </header>
 
 <!-- LOGIN -->
@@ -199,6 +225,18 @@
   </section>
 
   <div id="formErr" class="err" style="text-align:center"></div>
+</div>
+
+<!-- NOTIFICATIONS PAGE (full-screen, shown over the app) -->
+<div id="notifPage" class="wrap hide" style="padding-top:16px">
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+    <button id="notifBack" style="background:transparent;border:1px solid var(--line);border-radius:8px;padding:6px 12px;font-size:13px;cursor:pointer;color:var(--ink)">← Back</button>
+    <h2 style="margin:0;font-size:17px;font-family:'Manrope',sans-serif;color:var(--brand)">🔔 Interim Verifications</h2>
+  </div>
+  <div id="notifList">
+    <div class="hint" style="color:var(--muted)">No pending verifications.</div>
+  </div>
+  <div id="notifEmpty" class="hint" style="display:none;color:var(--muted)"></div>
 </div>
 
 <div class="submitbar" id="submitbar"><div class="inner"><button class="btn" id="submitBtn">Submit</button></div></div>
@@ -390,11 +428,9 @@ function doLogin(){
   call("login",{username:u,password:p}).then(function(res){
     btn.disabled=false;btn.textContent="Log in";
     if(!res||!res.ok){$("loginErr").textContent=(res&&res.error)||"Login failed";return;}
-    if(String(res.role).toUpperCase()!=="CA"){$("loginErr").textContent="This is the CA app. Use the Supervisor app for supervisor logins.";return;}
-    S.username=res.username;S.caName=res.name;S.role=res.role;
-    $("who").textContent=res.name;
-    $("loginScreen").classList.add("hide");$("app").classList.remove("hide");
-    loadAllocation(); armExitGuard();
+    if(String(res.role).toUpperCase()!=="CA"){$("loginErr").textContent="This is the CA app. Supervisor accounts cannot log in here.";return;}
+    sessionSave_(u,p,res);
+    enterApp_(res);
   }).catch(function(e){btn.disabled=false;btn.textContent="Log in";$("loginErr").textContent="Network error: "+(e&&e.message?e.message:e);});
 }
 
@@ -474,39 +510,4 @@ $("submitBtn").addEventListener("click",function(){MODE==="open"?saveOpening():s
 function saveOpening(){
   if(PREVIEW){ showModal("Preview only","This is a layout preview. Log in to actually save."); return; }
   var nozzles=[],bad=false;
-  document.querySelectorAll("#openNozzles .nozzle").forEach(function(d){
-    var op=d.querySelector('[data-f="opening"]').value;
-    if(op!=="")nozzles.push({nozzleNo:d.dataset.noz,product:d.dataset.prod,opening:parseFloat(op),openingPhoto:d.dataset.openingPhoto||""});
-  });
-  if(nozzles.length===0){$("formErr").textContent="Photograph at least one opening meter first.";return;}
-  var payload={meta:{date:S.date,du:S.du,shift:S.shift,caName:S.caName,shiftLeader:S.leader},nozzles:nozzles};
-  var btn=$("submitBtn");btn.disabled=true;btn.innerHTML='<span class="spin"></span> Saving…';
-  call("saveOpen",{payload:payload}).then(function(res){btn.disabled=false;btn.textContent="Save Opening (draft)";
-    if(res&&res.ok){showModal("✓ Opening saved","Saved <b>"+res.count+"</b> opening reading(s) for Dispenser "+S.du+", Shift "+S.shift+".<br><br>Come back this evening and choose CLOSING.");}
-    else showModal("Save failed",(res&&res.error)||"unknown");
-  }).catch(function(e){btn.disabled=false;btn.textContent="Save Opening (draft)";showModal("Save failed",(e&&e.message)||e);});
-}
-
-function submitClosing(){
-  if(PREVIEW){ showModal("Preview only","This is a layout preview. Log in to actually submit."); return; }
-  var rows=document.querySelectorAll("#closeNozzles .nozzle");
-  if(rows.length===0){$("formErr").textContent="Load your opening readings first.";return;}
-  var nozzles=[],bad=false,less=false;
-  rows.forEach(function(d){var cl=d.querySelector('[data-f="closing"]').value;var op=parseFloat(d.dataset.opening)||0;
-    if(cl===""){bad=true;return;}if(parseFloat(cl)<op)less=true;
-    nozzles.push({key:d.dataset.key,nozzleNo:d.dataset.noz,product:d.dataset.prod,closing:parseFloat(cl),closingPhoto:d.dataset.closingPhoto||""});});
-  if(bad){$("formErr").textContent="Photograph every closing meter.";return;}
-  if(less){$("formErr").textContent="A closing is less than its opening — retake that photo.";return;}
-  if(!verifyState){$("formErr").textContent="Tap Verified / Not verified first.";return;}
-  $("formErr").textContent="";
-  var payload={meta:{date:S.date,du:S.du,shift:S.shift,caName:S.caName},nozzles:nozzles,verification:verifyState};
-  var btn=$("submitBtn");btn.disabled=true;btn.innerHTML='<span class="spin"></span> Submitting…';
-  call("saveClose",{payload:payload}).then(function(res){btn.disabled=false;btn.textContent="Submit Closing";
-    if(res&&res.ok){showModal("✓ Closing submitted","Saved <b>"+res.closed+"</b> closing reading(s). Your supervisor will review and finalise the DCR.");}
-    else showModal("Submit failed",(res&&res.error)||"unknown");
-  }).catch(function(e){btn.disabled=false;btn.textContent="Submit Closing";showModal("Submit failed",(e&&e.message)||e);});
-}
-$("loadOpen").addEventListener("click",loadOpenings);
-</script>
-</body>
-</html>
+  document.querySelectorAll("#openNo

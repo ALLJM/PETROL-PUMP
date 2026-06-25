@@ -167,6 +167,28 @@
   .presets button.sel{background:linear-gradient(180deg,#f7b441,var(--accent-d));border-color:var(--accent-d);color:#241a02}
   .autotag .dot{box-shadow:0 0 0 3px rgba(31,157,87,.18)}
   *::-webkit-scrollbar{height:10px;width:10px}*::-webkit-scrollbar-thumb{background:#cdc4b5;border-radius:8px}*::-webkit-scrollbar-track{background:transparent}
+  /* ---- interim autocomplete + status ---- */
+  .ac-wrap{position:relative}
+  .ac-list{position:absolute;top:100%;left:0;right:0;background:#fff;border:1px solid var(--line);border-top:none;border-radius:0 0 10px 10px;max-height:160px;overflow-y:auto;z-index:30;display:none;box-shadow:0 8px 20px rgba(0,0,0,.12)}
+  .ac-list.open{display:block}
+  .ac-item{padding:9px 12px;cursor:pointer;font-size:14px;border-bottom:1px solid var(--line)}
+  .ac-item:last-child{border-bottom:none}
+  .ac-item:hover,.ac-item.focus{background:var(--soft)}
+  .int-send-form{display:grid;grid-template-columns:1fr 1fr auto;gap:10px;align-items:flex-end;margin-bottom:8px}
+  @media(max-width:520px){.int-send-form{grid-template-columns:1fr 1fr}.int-send-form .int-sendbtn{grid-column:1/-1}}
+  .int-send-form input{width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:10px;font-size:16px;background:#fff;color:var(--ink);font-family:inherit}
+  .int-send-form input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(245,166,35,.20)}
+  .int-sendbtn{border:1.5px solid var(--brand);background:#fff;color:var(--brand);border-radius:10px;padding:11px 16px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;transition:.15s}
+  .int-sendbtn:hover{border-color:var(--accent);color:var(--accent-d)}
+  .int-sendbtn:disabled{opacity:.45;cursor:not-allowed}
+  .int-row{display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:10px;margin-bottom:6px;background:var(--soft);border:1px solid var(--line);flex-wrap:wrap}
+  .int-row .int-info{flex:1;min-width:0}
+  .int-row .int-amt{font-weight:700;font-size:15px;color:var(--ink)}
+  .int-row .int-by{font-size:12px;color:var(--muted);margin-top:1px}
+  .chip{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;letter-spacing:.3px}
+  .chip-pending{background:#fff7e0;color:#9a6e00;border:1px solid #f5c842}
+  .chip-approved{background:#e6f7ec;color:var(--good);border:1px solid var(--good)}
+  .chip-rejected{background:#fdecea;color:var(--bad);border:1px solid var(--bad)}
 </style>
 </head>
 <body>
@@ -256,8 +278,18 @@
 
         <div class="panel">
           <h3 style="margin:0 0 10px">Interim Cash Collected</h3>
-          <div id="intBox"></div>
-          <div class="tot"><span>Interim Total</span><span id="intTot">₹0.00</span></div>
+          <!-- send form (hidden once finalized) -->
+          <div id="intForm">
+            <div class="int-send-form">
+              <div><label style="font-size:12px;color:var(--muted);font-weight:600;display:block;margin-bottom:4px">Amount (₹)</label><input id="intAmtNew" inputmode="decimal" placeholder="0"></div>
+              <div class="ac-wrap"><label style="font-size:12px;color:var(--muted);font-weight:600;display:block;margin-bottom:4px">Collected By</label><input id="intByNew" placeholder="type name…" autocomplete="off"><div id="intAcList" class="ac-list"></div></div>
+              <button id="intSendBtn" class="int-sendbtn">Send ✉</button>
+            </div>
+            <div id="intSendMsg" class="hint" style="min-height:16px;margin-bottom:6px;font-size:12px"></div>
+          </div>
+          <!-- live status list -->
+          <div id="intStatusList"></div>
+          <div class="tot"><span>Interim Total (Approved)</span><span id="intTot">₹0.00</span></div>
           <div class="tot" id="intMatchRow"><span>Interim vs Cash collected</span><span id="intMatch">—</span></div>
         </div>
 
@@ -403,11 +435,9 @@ function doLogin(){
   call("login",{username:u,password:p}).then(function(res){
     b.disabled=false;b.textContent="Log in";
     if(!res||!res.ok){$("loginErr").textContent=(res&&res.error)||"Login failed";return;}
-    if(String(res.role).toUpperCase()!=="SUPERVISOR"){$("loginErr").textContent="Not a supervisor account. Use the CA app instead.";return;}
-    S.name=res.name;$("who").innerHTML='<span>'+res.name+'</span><button id="logout">Logout</button>';
-    $("logout").onclick=function(){disarmExitGuard();location.reload();};
-    $("loginScreen").classList.add("hide");$("app").classList.remove("hide");
-    boot(); armExitGuard();
+    if(String(res.role).toUpperCase()!=="SUPERVISOR"){$("loginErr").textContent="This is the Supervisor app. CA accounts cannot log in here.";return;}
+    sessionSave_(u,p,res);
+    enterApp_(res);
   }).catch(function(e){b.disabled=false;b.textContent="Log in";$("loginErr").textContent="Network error: "+(e&&e.message?e.message:e);});
 }
 
@@ -428,6 +458,7 @@ function boot(){
   buildCollBox();buildInterim();buildDenom();
   renderDispensers();                                            /* draw dispensers immediately on arrival */
   call("listCAs",{}).then(function(res){S.cas=(res&&res.cas)||[];});
+  loadUsers_();
   $("allocDate").addEventListener("change",renderDispensers);
   $("repDate").addEventListener("change",renderCAList);
 }
@@ -718,19 +749,21 @@ function applyFinalizedState(res){
   DEN.forEach(function(x){ var el=document.querySelector('.dcount[data-d="'+x+'"]'); if(el){ el.value=(fin&&d)?(d["n"+x]||""):""; el.readOnly=fin; } });
   if($("coinCount")){ $("coinCount").value=""; $("coinCount").readOnly=fin; }
   if($("coinAmt")){ $("coinAmt").value=(fin&&d)?(d.coins||""):""; $("coinAmt").readOnly=fin; }
-  var ia=document.querySelectorAll(".intamt"), ib=document.querySelectorAll(".intby");
-  for(var i=0;i<ia.length;i++){ ia[i].value=(fin&&its[i])?(its[i].amount||""):""; ib[i].value=(fin&&its[i])?(its[i].collectedBy||""):""; ia[i].readOnly=fin; ib[i].readOnly=fin; }
+  /* interim form — hide when finalized; status list always shown via polling */
+  var intF=$("intForm"); if(intF) intF.style.display=fin?"none":"";
   var fb=$("finalizeBtn"); if(fb){ fb.disabled=fin; fb.textContent=fin?"\u2713 Already finalized (view only)":"\u2705 Finalize DCR for this CA"; }
   var nb=$("repFinNote"); if(nb){ nb.style.display=fin?"":"none"; if(fin) nb.textContent="This shift is already finalized \u2014 showing the saved values from the Google Sheet (view only)."; }
   recalcColl();
 }
 document.getElementById("readBody").addEventListener("input",function(e){ if(e.target&&e.target.classList&&(e.target.classList.contains("ntest")||e.target.classList.contains("oedit"))) recomputeReadings(); });
 function pickCA(name,btn){
+  stopInterimPoll_();
   S.pickedCA=name;
   [].forEach.call($("caList").children,function(b){b.classList.toggle("sel",b===btn);});
   $("repCAName").textContent=name;$("repErr").textContent="";
   call("getCAReport",{caName:name,date:$("repDate").value}).then(function(res){
     renderReport_(res||{nozzles:[]});
+    startInterimPoll_();
   }).catch(function(e){$("repErr").textContent="Could not load readings: "+(e&&e.message?e.message:e);});
 }
 
@@ -738,85 +771,95 @@ var COLL=[["cash","Cash"],["card","Card"],["paytm","Paytm"],["fleetCard","Fleet 
 function buildCollBox(){var b=$("collBox");COLL.forEach(function(c){var r=document.createElement("div");r.className="moneyrow";
   r.innerHTML='<div><label>'+c[1]+'</label><input class="coll" data-f="'+c[0]+'" inputmode="decimal" placeholder="0"></div><div><label>Amount</label><input readonly id="cv_'+c[0]+'" value="0.00"></div>';
   b.appendChild(r);});b.addEventListener("input",recalcColl);}
-function buildInterim(){var b=$("intBox");for(var i=1;i<=6;i++){var r=document.createElement("div");r.className="moneyrow";r.style.gridTemplateColumns="30px 1fr 1fr";
-  r.innerHTML='<div style="align-self:center;text-align:center;font-weight:700;color:var(--muted)">'+i+'</div><input class="intamt" inputmode="decimal" placeholder="amount"><input class="intby" placeholder="collected by">';b.appendChild(r);}b.addEventListener("input",recalcColl);}
-var DEN=[500,200,100,50,20,10];
-function buildDenom(){var b=$("denBody");DEN.forEach(function(d){var tr=document.createElement("tr");
-  tr.innerHTML='<td>'+d+'</td><td><input class="dcount" data-d="'+d+'" type="number" min="0" placeholder="0" style="text-align:center"></td><td class="amt" id="da_'+d+'">0.00</td>';b.appendChild(tr);});
-  var tr=document.createElement("tr");tr.innerHTML='<td>Coins</td><td><input id="coinCount" type="number" min="0" placeholder="0" style="text-align:center"></td><td><input id="coinAmt" type="number" step="0.01" placeholder="0" style="text-align:center"></td>';b.appendChild(tr);
-  b.addEventListener("input",recalcColl);}
-function recalcColl(){
-  var due=parseFloat($("repBody").dataset.due)||0,total=0;
-  document.querySelectorAll(".coll").forEach(function(el){var v=evalSum(el.value);$("cv_"+el.dataset.f).value=num(v);total+=v;});
-  $("collTot").textContent=money(total);
-  var diff=total-due;$("seVal").textContent=(diff>=0?"+":"−")+num(Math.abs(diff));
-  var it=0;document.querySelectorAll(".intamt").forEach(function(el){it+=evalSum(el.value);});$("intTot").textContent=money(it);
-  var dt=0;DEN.forEach(function(x){var c=parseInt(document.querySelector('.dcount[data-d="'+x+'"]').value)||0;var a=x*c;$("da_"+x).textContent=num(a);dt+=a;});
-  dt+=parseFloat($("coinAmt").value)||0;$("denTot").textContent=num(dt);
-  var cash=evalSum(document.querySelector('.coll[data-f="cash"]').value)||0;
-  setMatch("denMatch","denMatchRow",dt,cash);
-  setMatch("intMatch","intMatchRow",it,cash);
-}
-function setMatch(valId,rowId,amount,cash){
-  var d=round2(amount-cash), el=$(valId), row=$(rowId);
-  if((cash===0)&&(amount===0)){ el.textContent="—"; el.style.color="var(--muted)"; row.classList.remove("warn"); return; }
-  if(Math.abs(d)<0.005){ el.textContent="✓ matches "+money(cash); el.style.color="var(--good)"; row.classList.remove("warn"); }
-  else{ el.textContent=(d>0?"✗ "+money(d)+" over":"✗ "+money(Math.abs(d))+" short")+" (cash "+money(cash)+")"; el.style.color="var(--bad)"; row.classList.add("warn"); }
+/* ---- interim state ---- */
+var INTERIM_STATUS=[];   // latest from getInterimStatus (all statuses)
+var interimPollTimer=null;
+var USERS_LIST=[];
+
+function buildInterim(){
+  /* Wire up the autocomplete on the Collected By field */
+  var byInput=$("intByNew"), acList=$("intAcList");
+  byInput.addEventListener("input",function(){
+    var q=byInput.value.trim().toLowerCase();
+    acList.innerHTML="";
+    if(!q){ acList.classList.remove("open"); return; }
+    var matches=USERS_LIST.filter(function(n){ return n.toLowerCase().indexOf(q)>=0; });
+    if(!matches.length){ acList.classList.remove("open"); return; }
+    matches.forEach(function(n){
+      var d=document.createElement("div"); d.className="ac-item"; d.textContent=n;
+      d.addEventListener("mousedown",function(e){ e.preventDefault(); byInput.value=n; acList.classList.remove("open"); });
+      acList.appendChild(d);
+    });
+    acList.classList.add("open");
+  });
+  byInput.addEventListener("blur",function(){ setTimeout(function(){ acList.classList.remove("open"); },150); });
+  /* Send button */
+  $("intSendBtn").addEventListener("click",sendInterim_);
 }
 
-(function(){ var eb=$("editReadingsBtn"); if(!eb) return;
-  eb.onclick=function(){
-    var inputs=$("readBody").querySelectorAll(".oedit");
-    if(!inputs.length) return;
-    if(eb.dataset.on==="1"){
-      [].forEach.call(inputs,function(i){ i.readOnly=true; i.style.background=""; i.style.borderColor=""; });
-      eb.dataset.on=""; eb.textContent="✏️ Edit CA readings";
-      var eh=$("editHint"); if(eh) eh.textContent="Override wrong Opening/Closing values uploaded by the CA. Nozzle Test stays supervisor-entered.";
-    } else {
-      [].forEach.call(inputs,function(i){ i.readOnly=false; i.style.background="#fff7e6"; i.style.borderColor="var(--accent,#f5a623)"; });
-      eb.dataset.on="1"; eb.textContent="🔓 Editing on — values unlocked";
-      var eh2=$("editHint"); if(eh2) eh2.textContent="Change Opening/Closing; Volume & Value update live. You'll be asked for a reason when you finalize.";
-    }
-  };
-})();
-$("finalizeBtn").onclick=function(){
-  if(PREVIEW){msg("Preview only","Log in to actually finalise the DCR.");return;}
-  if(!S.pickedCA){$("repErr").textContent="Pick a CA first.";return;}
-  var cashChk=evalSum(document.querySelector('.coll[data-f="cash"]').value)||0;
-  var denChk=0;DEN.forEach(function(x){denChk+=x*(parseInt(document.querySelector('.dcount[data-d="'+x+'"]').value)||0);});denChk+=parseFloat($("coinAmt").value)||0;
-  var intChk=0;document.querySelectorAll(".intamt").forEach(function(el){intChk+=evalSum(el.value);});
-  var warns=[];
-  if(Math.abs(round2(denChk-cashChk))>=0.005) warns.push("Denomination "+money(denChk)+" does not match Cash "+money(cashChk));
-  if(Math.abs(round2(intChk-cashChk))>=0.005) warns.push("Interim "+money(intChk)+" does not match Cash "+money(cashChk));
-  if(warns.length && !window.confirm("Cash does not tally:\n- "+warns.join("\n- ")+"\n\nFinalise anyway?")) return;
-  var coll={},total=0;COLL.forEach(function(c){var v=round2(evalSum(document.querySelector('.coll[data-f="'+c[0]+'"]').value));coll[c[0]]=v;total+=v;});coll.total=round2(total);
-  var interim=[],a=document.querySelectorAll(".intamt"),by=document.querySelectorAll(".intby");
-  for(var i=0;i<a.length;i++){var v=round2(evalSum(a[i].value));if(v>0||by[i].value)interim.push({sl:i+1,amount:v,collectedBy:by[i].value||""});}
-  var den={total:0,notes:{}},dt=0;DEN.forEach(function(x){var c=parseInt(document.querySelector('.dcount[data-d="'+x+'"]').value)||0;den.notes["n"+x]={count:c,amount:round2(x*c)};dt+=x*c;});
-  var cc=parseInt($("coinCount").value)||0,ca=parseFloat($("coinAmt").value)||0;den.notes.coins={count:cc,amount:round2(ca)};dt+=ca;den.total=round2(dt);
-  var tests={};
-  $("readBody").querySelectorAll("tr[data-key]").forEach(function(tr){ var ti=tr.querySelector(".ntest"); tests[tr.dataset.key]=ti?(parseFloat(ti.value)||0):0; });
-  var _packed=($("packedAmt")&&$("packedAmt").value!=="")?round2(parseFloat($("packedAmt").value)||0):"";
-  var readingEdits={},anyEdit=false;
-  $("readBody").querySelectorAll("tr[data-key]").forEach(function(tr){
-    var oi=tr.querySelector('.oedit[data-role="open"]'), ci=tr.querySelector('.oedit[data-role="close"]');
-    if(!oi||!ci) return;
-    if(String(oi.value)!==String(oi.dataset.orig)||String(ci.value)!==String(ci.dataset.orig)){
-      readingEdits[tr.dataset.key]={opening:round2(parseFloat(oi.value)||0),closing:round2(parseFloat(ci.value)||0)}; anyEdit=true;
-    }
-  });
-  var editNote="";
-  if(anyEdit){
-    var why=window.prompt("You changed one or more CA-uploaded readings.\nWhy did you edit them? (leave blank to use the default note)","");
-    editNote=(why&&why.trim())?why.trim():"These readings have been edited by the supervisor.";
+function loadUsers_(){
+  call("getUsers",{}).then(function(res){
+    if(res&&res.ok) USERS_LIST=res.users||[];
+  }).catch(function(){});
+}
+
+function sendInterim_(){
+  var amt=parseFloat($("intAmtNew").value)||0, by=($("intByNew").value||"").trim();
+  var msg=$("intSendMsg");
+  if(amt<=0){ msg.style.color="var(--bad)"; msg.textContent="Enter an amount greater than 0."; return; }
+  if(!by){ msg.style.color="var(--bad)"; msg.textContent="Enter who collected the cash."; return; }
+  if(!S.pickedCA){ msg.style.color="var(--bad)"; msg.textContent="Pick a CA first."; return; }
+  var btn=$("intSendBtn"); btn.disabled=true;
+  msg.style.color="var(--muted)"; msg.textContent="Sending…";
+  var sess={}; try{ sess=JSON.parse(localStorage.getItem('dcrSup')||'{}'); }catch(e){}
+  call("createInterimRequest",{date:$("repDate").value,shift:"",caName:S.pickedCA,supervisor:S.name||sess.name||"",amount:amt,collectedBy:by})
+    .then(function(res){
+      btn.disabled=false;
+      if(res&&res.ok){
+        msg.style.color="var(--good)"; msg.textContent="✓ Sent — waiting for CA to verify.";
+        $("intAmtNew").value=""; $("intByNew").value="";
+        refreshInterimStatus_();
+      } else {
+        msg.style.color="var(--bad)"; msg.textContent="Failed: "+((res&&res.error)||"unknown");
+      }
+    }).catch(function(e){ btn.disabled=false; msg.style.color="var(--bad)"; msg.textContent="Network error."; });
+}
+
+function renderInterimStatus_(requests){
+  INTERIM_STATUS=requests||[];
+  var list=$("intStatusList"); list.innerHTML="";
+  if(!requests||!requests.length){
+    list.innerHTML='<div class="hint" style="color:var(--muted);font-size:12px;margin-bottom:8px">No interim entries yet for this CA today.</div>';
+  } else {
+    requests.forEach(function(r){
+      var chipClass=r.status==="APPROVED"?"chip-approved":(r.status==="REJECTED"?"chip-rejected":"chip-pending");
+      var chipLabel=r.status==="APPROVED"?"✅ Approved":(r.status==="REJECTED"?"❌ Rejected":"🟡 Pending CA");
+      var noteHtml=r.caNote?'<div style="font-size:11px;color:var(--bad);margin-top:2px">CA note: '+r.caNote+'</div>':"";
+      var row=document.createElement("div"); row.className="int-row";
+      row.innerHTML='<div class="int-info"><div class="int-amt">₹'+num(r.amount)+'</div><div class="int-by">Collected by: '+r.collectedBy+' &nbsp;·&nbsp; Sent by: '+r.supervisor+'</div>'+noteHtml+'</div><span class="chip '+chipClass+'">'+chipLabel+'</span>';
+      list.appendChild(row);
+    });
   }
-  var payload={meta:{date:$("repDate").value,caName:S.pickedCA,shiftLeader:""},collection:coll,interim:interim,denomination:den,tests:tests,packedProducts:_packed,readingEdits:readingEdits,editNote:editNote};
-  var b=$("finalizeBtn");b.disabled=true;b.innerHTML='<span class="spin"></span> Finalising…';$("repErr").textContent="";
-  call("finalizeDCR",{payload:payload}).then(function(res){b.disabled=false;b.textContent="✅ Finalize DCR for this CA";
-    if(res&&res.ok){msg("✓ DCR finalised","Wrote <b>"+res.rows+"</b> nozzle row(s) for "+S.pickedCA+".<br>Sales Due "+money(res.salesValueDue)+" · Collection "+money(res.totalCollection)+" · Short/Excess "+money(res.shortExcess));pickCA(S.pickedCA,document.querySelector("#caList button.sel"));}
-    else msg("Could not finalise",(res&&res.error)||"unknown");
-  }).catch(function(e){b.disabled=false;b.textContent="✅ Finalize DCR for this CA";$("repErr").textContent=(e&&e.message)||e;});
-};
-</script>
-</body>
-</html>
+  /* update total (APPROVED only) */
+  var tot=0; INTERIM_STATUS.forEach(function(r){ if(r.status==="APPROVED") tot+=r.amount; });
+  $("intTot").textContent=money(tot);
+  var cash=evalSum((document.querySelector('.coll[data-f="cash"]')||{}).value||"0")||0;
+  setMatch("intMatch","intMatchRow",tot,cash);
+}
+
+function startInterimPoll_(){
+  stopInterimPoll_();
+  refreshInterimStatus_();
+  interimPollTimer=setInterval(refreshInterimStatus_,8000);
+}
+function stopInterimPoll_(){
+  if(interimPollTimer){ clearInterval(interimPollTimer); interimPollTimer=null; }
+  INTERIM_STATUS=[];
+}
+function refreshInterimStatus_(){
+  if(!S.pickedCA) return;
+  call("getInterimStatus",{date:$("repDate").value,caName:S.pickedCA})
+    .then(function(res){ if(res&&res.ok) renderInterimStatus_(res.requests); })
+    .catch(function(){});
+}
+var DEN=[500,200,100,50,20,10
