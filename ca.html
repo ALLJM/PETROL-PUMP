@@ -111,7 +111,7 @@
   .livehead{color:#fff;font-size:13.5px;margin-bottom:8px;text-align:center;max-width:94%}
   .livestage{position:relative;width:100%;max-width:560px;display:flex;align-items:center;justify-content:center;background:#000;border-radius:10px;overflow:hidden}
   .livestage video{width:100%;height:auto;display:block;max-height:72vh}
-  .livebox{position:absolute;left:7%;top:39%;width:86%;height:22%;border:3px solid var(--accent);border-radius:8px;box-shadow:0 0 0 2px rgba(0,0,0,.45),0 0 18px rgba(245,166,35,.55);pointer-events:none}
+  .livebox{position:absolute;left:28.5%;top:39%;width:43%;height:22%;border:3px solid var(--accent);border-radius:8px;box-shadow:0 0 0 2px rgba(0,0,0,.45),0 0 18px rgba(245,166,35,.55);pointer-events:none}
   .livebox::after{content:"V";position:absolute;left:6px;top:-22px;color:var(--accent);font-weight:800;font-size:13px;text-shadow:0 1px 3px #000}
   .livehint{position:absolute;left:0;right:0;bottom:8px;text-align:center;color:#fff;font-size:11px;opacity:.85;text-shadow:0 1px 3px #000}
   .livebtns{display:flex;gap:10px;margin-top:14px;flex-wrap:wrap;justify-content:center}
@@ -321,7 +321,7 @@ function liveCapture(which){
         var cv=document.createElement("canvas"); cv.width=vw; cv.height=vh;
         cv.getContext("2d").drawImage(video,0,0,vw,vh);
         var dataUrl=cv.toDataURL("image/jpeg",0.92);
-        var FX=0.07,FW=0.86,FH=0.22,FY=(1-FH)/2;
+        var FX=0.285,FW=0.43,FH=0.22,FY=(1-FH)/2;
         var rect={x:Math.round(FX*vw),y:Math.round(FY*vh),w:Math.round(FW*vw),h:Math.round(FH*vh)};
         stop(); modal.classList.remove("open"); cleanup(); resolve({dataUrl:dataUrl,rect:rect});
       }catch(e){ stop(); modal.classList.remove("open"); cleanup(); resolve({unsupported:true,error:e}); }
