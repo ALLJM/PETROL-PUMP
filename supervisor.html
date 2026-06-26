@@ -167,6 +167,57 @@
   .presets button.sel{background:linear-gradient(180deg,#f7b441,var(--accent-d));border-color:var(--accent-d);color:#241a02}
   .autotag .dot{box-shadow:0 0 0 3px rgba(31,157,87,.18)}
   *::-webkit-scrollbar{height:10px;width:10px}*::-webkit-scrollbar-thumb{background:#cdc4b5;border-radius:8px}*::-webkit-scrollbar-track{background:transparent}
+
+  /* ====== MOBILE RESPONSIVE ====== */
+  .tblscroll{overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:10px}
+  @media(max-width:700px){
+    /* layout */
+    .main{padding:12px 10px}
+    h2.t{font-size:17px;margin-bottom:10px}
+    /* nav tabs */
+    .side{padding:0}
+    .side a{padding:12px 14px;font-size:13px}
+    /* CA button list — horizontal scroll instead of wrap */
+    .calist{flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:6px;margin-bottom:10px}
+    .calist button{flex-shrink:0;white-space:nowrap;padding:8px 14px;font-size:13px}
+    /* readings table */
+    #readTable{min-width:660px;font-size:12px}
+    #readTable th,#readTable td{padding:5px 6px}
+    /* collection moneyrow */
+    .moneyrow{grid-template-columns:1fr 110px;gap:8px}
+    /* interim send form */
+    .int-send-form{grid-template-columns:1fr 1fr}
+    .int-send-form .int-sendbtn{grid-column:1/-1}
+    /* denomination table */
+    table{font-size:13px}
+    th,td{padding:6px 7px}
+    /* totals */
+    .tot{font-size:13px;padding:10px 12px}
+    .tot.big{font-size:14px}
+    /* panels */
+    .panel{padding:12px}
+    /* toolbar */
+    .toolbar{gap:8px}
+    .toolbar .f{min-width:140px}
+    /* dispenser grid */
+    .dispgrid{grid-template-columns:repeat(2,1fr);gap:10px}
+    /* dashboard */
+    .dashhead{flex-direction:column;align-items:flex-start;gap:10px}
+    .dashhead .ctrls{width:100%}
+    .dashhead .ctrls .f{flex:1;min-width:120px}
+    .herorow{grid-template-columns:1fr}
+    .presets{gap:6px}
+    .presets button{padding:6px 12px;font-size:12px}
+    .hero{padding:14px}
+    .hero .val{font-size:22px}
+    .pcard{padding:12px}
+    /* finalize button */
+    #finalizeBtn{padding:14px;font-size:15px}
+    /* modal */
+    .modal .box{max-width:96vw}
+    /* rates section */
+    .g3{grid-template-columns:1fr}
+  }
   /* ---- interim autocomplete + status ---- */
   .ac-wrap{position:relative}
   .ac-list{position:absolute;top:100%;left:0;right:0;background:#fff;border:1px solid var(--line);border-top:none;border-radius:0 0 10px 10px;max-height:160px;overflow-y:auto;z-index:30;display:none;box-shadow:0 8px 20px rgba(0,0,0,.12)}
@@ -260,7 +311,7 @@
         <div id="repFinNote" class="dashnote" style="display:none"></div>
         <div class="panel">
           <h3 style="margin:0 0 10px">Readings — <span id="repCAName"></span></h3>
-          <table id="readTable"><thead><tr><th>Dispenser/Nozzle</th><th>Product</th><th>Opening</th><th>Closing</th><th>Volume (L)</th><th>Nozzle Test (L)</th><th>Net Vol (L)</th><th>Rate</th><th>Value ₹</th><th>Photos</th><th>CA Verify</th></tr></thead><tbody id="readBody"></tbody></table>
+          <div class="tblscroll"><table id="readTable"><thead><tr><th>Dispenser/Nozzle</th><th>Product</th><th>Opening</th><th>Closing</th><th>Volume (L)</th><th>Nozzle Test (L)</th><th>Net Vol (L)</th><th>Rate</th><th>Value ₹</th><th>Photos</th><th>CA Verify</th></tr></thead><tbody id="readBody"></tbody></table></div>
           <div class="tot big"><span>Sales Value Due</span><span id="dueVal">₹0.00</span></div>
           <div id="editRow" style="margin-top:12px;display:flex;gap:10px;align-items:center;flex-wrap:wrap">
             <button type="button" id="editReadingsBtn" style="padding:10px 16px;border-radius:10px;border:1px solid var(--line,#ccc);background:#fff;font-weight:700;cursor:pointer">✏️ Edit CA readings</button>
@@ -364,15 +415,15 @@
 
         <div class="pcard" id="dailyPanel" style="display:none">
           <h3>Daily Sales <small>Per-day breakdown for the selected period</small></h3>
-          <table><thead><tr><th>Date</th><th>Net Qty</th><th>Sales Due</th><th>Collection</th><th>Short / Excess</th><th>Trend</th></tr></thead><tbody id="dailyBody"></tbody></table>
+          <div class="tblscroll"><table><thead><tr><th>Date</th><th>Net Qty</th><th>Sales Due</th><th>Collection</th><th>Short / Excess</th><th>Trend</th></tr></thead><tbody id="dailyBody"></tbody></table></div>
         </div>
 
         <div class="twocol">
           <div class="pcard"><h3>CA Performance</h3>
-            <table><thead><tr><th>CA</th><th>Shifts</th><th>Net Qty</th><th>Sales Due</th><th>Collection</th><th>Short / Excess</th></tr></thead><tbody id="dashCAs"></tbody></table>
+            <div class="tblscroll"><table><thead><tr><th>CA</th><th>Shifts</th><th>Net Qty</th><th>Sales Due</th><th>Collection</th><th>Short / Excess</th></tr></thead><tbody id="dashCAs"></tbody></table></div>
           </div>
           <div class="pcard"><h3>Short / Excess Alerts</h3>
-            <table><thead><tr><th>Date</th><th>CA</th><th>Du</th><th>Amount</th></tr></thead><tbody id="dashAlerts"></tbody></table>
+            <div class="tblscroll"><table><thead><tr><th>Date</th><th>CA</th><th>Du</th><th>Amount</th></tr></thead><tbody id="dashAlerts"></tbody></table></div>
           </div>
         </div>
 
@@ -935,39 +986,4 @@ $("finalizeBtn").onclick=function(){
   var payload={meta:{date:$("repDate").value,caName:S.pickedCA,shiftLeader:""},collection:coll,denomination:den,tests:tests,packedProducts:_packed,readingEdits:readingEdits,editNote:editNote};
   var b=$("finalizeBtn");b.disabled=true;b.innerHTML='<span class="spin"></span> Finalising…';$("repErr").textContent="";
   call("finalizeDCR",{payload:payload}).then(function(res){b.disabled=false;b.textContent="✅ Finalize DCR for this CA";
-    if(res&&res.ok){msg("✓ DCR finalised","Wrote <b>"+res.rows+"</b> nozzle row(s) for "+S.pickedCA+".<br>Sales Due "+money(res.salesValueDue)+" · Collection "+money(res.totalCollection)+" · Short/Excess "+money(res.shortExcess));pickCA(S.pickedCA,document.querySelector("#caList button.sel"));}
-    else msg("Could not finalise",(res&&res.error)||"unknown");
-  }).catch(function(e){b.disabled=false;b.textContent="✅ Finalize DCR for this CA";$("repErr").textContent=(e&&e.message)||e;});
-};
-
-/* ---- session helpers ---- */
-function sessionSave_(u,p,res){
-  try{ localStorage.setItem('dcrSup',JSON.stringify({username:u,password:p,role:res.role,name:res.name,ts:Date.now()})); }catch(e){}
-}
-function sessionClear_(){ try{ localStorage.removeItem('dcrSup'); }catch(e){} }
-function enterApp_(res){
-  S.name=res.name;
-  $("who").innerHTML='<span>'+res.name+'</span><button id="logout">Logout</button>';
-  $("logout").onclick=function(){ sessionClear_(); disarmExitGuard(); location.reload(); };
-  $("loginScreen").classList.add("hide");$("app").classList.remove("hide");
-  boot(); armExitGuard();
-}
-/* ---- auto session restore on page load ---- */
-(function(){
-  try{
-    var sess=JSON.parse(localStorage.getItem('dcrSup')||'null');
-    if(!sess||!sess.username||!sess.password) return;
-    if((Date.now()-sess.ts)>12*60*60*1000){ sessionClear_(); return; } // 12h shift expiry
-    var btn=$("loginBtn"); btn.disabled=true; btn.innerHTML='<span class="spin"></span> Restoring session…';
-    call("login",{username:sess.username,password:sess.password}).then(function(res){
-      btn.disabled=false; btn.textContent="Log in";
-      if(res&&res.ok&&String(res.role).toUpperCase()==="SUPERVISOR"){
-        sessionSave_(sess.username,sess.password,res); // refresh timestamp
-        enterApp_(res);
-      } else { sessionClear_(); }
-    }).catch(function(){ btn.disabled=false; btn.textContent="Log in"; sessionClear_(); });
-  }catch(e){ sessionClear_(); }
-})();
-</script>
-</body>
-</html>
+    if(res&&res.ok){msg("✓ DCR
