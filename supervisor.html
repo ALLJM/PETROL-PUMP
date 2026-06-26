@@ -1099,9 +1099,9 @@ function renderCal(id){
   var selVal=document.getElementById(id).value;
   var selDate=selVal?new Date(selVal+'T00:00:00'):null;
   var html='<div class="cal-head">'+
-    '<button class="cal-nav" onclick="moveCal(''+id+'',-1)">&#8249;</button>'+
+    '<button class="cal-nav" onclick="moveCal(\'+id+\',-1)">&#8249;</button>'+
     '<span>'+MONTHS[m]+' '+y+'</span>'+
-    '<button class="cal-nav" onclick="moveCal(''+id+'',1)">&#8250;</button>'+
+    '<button class="cal-nav" onclick="moveCal(\'+id+\',1)">&#8250;</button>'+
   '</div><div class="cal-grid">';
   DAYS.forEach(function(d){html+='<div class="cal-dow">'+d+'</div>';});
   for(var i=0;i<first;i++)html+='<div></div>';
@@ -1111,7 +1111,7 @@ function renderCal(id){
     var cls='cal-day';
     if(dt.getTime()===today.getTime())cls+=' today';
     if(selDate&&dt.getTime()===selDate.getTime())cls+=' sel';
-    html+='<button class="'+cls+'" onclick="pickDate(''+id+'',''+iso+'')">'+d+'</button>';
+    html+='<button class="'+cls+'" onclick="pickDate(\'+id+\',' +iso+ '\')">'+d+'</button>';
   }
   html+='</div>';
   cal.innerHTML=html;
@@ -1197,4 +1197,4 @@ function doLogout(){
 })();
 </script>
 </body>
-</html>
+</html>    
