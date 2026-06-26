@@ -492,54 +492,41 @@ a.ph{color:var(--accent);font-weight:700;text-decoration:none}
     </section>
 
     <section id="prodView" class="hide">
-      <div class="card">
-        <h2 style="font-size:15px;font-weight:700;margin:0 0 16px">Record Packed Product Sale</h2>
-        <div class="pp-grid">
+      <div class="panel">
+        <h2 class="t">Record Packed Product Sale</h2>
+        <div class="grid g2" style="margin-bottom:14px">
           <div>
-            <div class="pp-label">Date</div>
-            <div class="custom-date-wrap">
-              <div class="custom-date-display" id="ppDateDisplay" onclick="toggleCal('ppDate')">
-                <span id="ppDateTxt">Today</span>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
-              </div>
-              <div class="custom-cal" id="ppDateCal"></div>
-            </div>
-            <input type="hidden" id="ppDate">
+            <label>Date</label>
+            <input type="date" id="ppDate" style="font-size:15px">
           </div>
           <div>
-            <div class="pp-label">CA</div>
-            <select id="ppCA" class="sel" style="width:100%"></select>
-          </div>
-          <div class="full">
-            <div class="pp-label">Product</div>
-            <select id="ppProd" class="sel" style="width:100%"></select>
+            <label>Product</label>
+            <select id="ppProd" style="font-size:15px"></select>
           </div>
           <div>
-            <div class="pp-label">Qty</div>
-            <input type="number" id="ppQty" class="inp" min="1" value="1" style="width:100%;font-size:16px;font-weight:700">
+            <label>Qty</label>
+            <input type="number" id="ppQty" min="1" value="1" style="font-size:18px;font-weight:700">
           </div>
           <div>
-            <div class="pp-label">Unit Price</div>
-            <div class="pp-unit" id="ppUnitPrice">&mdash;</div>
-          </div>
-          <div class="full">
-            <div class="pp-label">Total Value</div>
-            <div class="pp-big" id="ppTotal">&#8377;0.00</div>
-          </div>
-          <div class="full">
-            <div class="pp-label">Payment Mode</div>
-            <div class="pp-mode-row">
-              <button class="pp-mode-btn sel" data-mode="cash">Cash</button>
-              <button class="pp-mode-btn" data-mode="paytm">Paytm / UPI</button>
-              <button class="pp-mode-btn" data-mode="credit">Credit Card</button>
-            </div>
+            <label>Unit Price</label>
+            <div style="padding:11px 0;font-size:18px;font-weight:700;color:var(--ink)" id="ppUnitPrice">&mdash;</div>
           </div>
         </div>
-        <div class="err" id="ppErr" style="margin-bottom:10px"></div>
+        <div style="background:var(--accent-soft);border:1.5px solid var(--accent);border-radius:var(--r-input);padding:14px 16px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center">
+          <span style="font-size:12px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.04em">Total Value</span>
+          <span style="font-size:26px;font-weight:800;color:var(--accent)" id="ppTotal">&#8377;0.00</span>
+        </div>
+        <label style="margin-bottom:6px">Payment Mode</label>
+        <div class="pp-mode-row" style="margin-bottom:14px">
+          <button class="pp-mode-btn sel" data-mode="cash">Cash</button>
+          <button class="pp-mode-btn" data-mode="paytm">Paytm / UPI</button>
+          <button class="pp-mode-btn" data-mode="credit">Credit Card</button>
+        </div>
+        <div class="err" id="ppErr" style="margin-bottom:8px"></div>
         <button class="btn" id="ppSubmit" style="width:100%">&#43; Record Sale</button>
       </div>
-      <div class="card" style="margin-top:12px">
-        <h2 style="font-size:15px;font-weight:700;margin:0 0 12px">Packed Sales &mdash; <span id="ppListDate">Today</span></h2>
+      <div class="panel" style="margin-top:12px">
+        <h2 class="t" style="font-size:16px;margin-bottom:12px">Packed Sales &mdash; <span id="ppListDate">Today</span></h2>
         <div id="ppList"><div style="color:var(--muted);font-size:13px;text-align:center;padding:20px 0">No packed sales recorded yet.</div></div>
         <div class="pp-tot-row" id="ppTotRow" style="display:none"><span>Total</span><span id="ppTot">&#8377;0.00</span></div>
       </div>
@@ -1249,15 +1236,11 @@ document.addEventListener('click',function(e){
 
 /* ---- packed products JS ---- */
 function renderProdView(){
-  var caEl=$('ppCA'); caEl.innerHTML='';
-  (S.cas||[]).forEach(function(ca){
-    var o=document.createElement('option'); o.value=ca; o.textContent=ca; caEl.appendChild(o);
-  });
-  if(S.pickedCA) caEl.value=S.pickedCA;
+  if(!$('ppDate').value) $('ppDate').value=today();
   var pr=$('ppProd'); pr.innerHTML='';
   PACKED_PRODUCTS.forEach(function(p,i){
     var o=document.createElement('option'); o.value=i;
-    o.textContent=p.name+' ('+p.unit+') — '+p.price; pr.appendChild(o);
+    o.textContent=p.name+' ('+p.unit+') — ₹'+p.price; pr.appendChild(o);
   });
   calcPPTotal();
   loadPackedSales();
@@ -1268,6 +1251,7 @@ function renderProdView(){
       document.querySelectorAll('.pp-mode-btn').forEach(function(x){x.classList.toggle('sel',x.dataset.mode===PP_MODE);});
     };
   });
+  $('ppDate').onchange=loadPackedSales;
   $('ppProd').onchange=calcPPTotal;
   $('ppQty').oninput=calcPPTotal;
   $('ppSubmit').onclick=submitPackedSale;
@@ -1283,14 +1267,12 @@ function submitPackedSale(){
   var idx=parseInt($('ppProd').value)||0;
   var p=PACKED_PRODUCTS[idx]||PACKED_PRODUCTS[0];
   var qty=Math.max(1,parseInt($('ppQty').value)||1);
-  var ca=$('ppCA').value||'';
   var dt=$('ppDate').value||today();
   var total=round2(p.price*qty);
   $('ppErr').textContent='';
-  if(!ca){$('ppErr').textContent='Select a CA.';return;}
   var btn=$('ppSubmit'); btn.disabled=true; btn.textContent='Saving…';
   call('createPackedSale',{
-    date:dt, caName:ca, product:p.name, unit:p.unit,
+    date:dt, caName:S.name, product:p.name, unit:p.unit,
     qty:qty, unitPrice:p.price, totalValue:total,
     paymentMode:PP_MODE, supervisor:S.name
   }).then(function(res){
