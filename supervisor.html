@@ -862,4 +862,112 @@ function refreshInterimStatus_(){
     .then(function(res){ if(res&&res.ok) renderInterimStatus_(res.requests); })
     .catch(function(){});
 }
-var DEN=[500,200,100,50,20,10
+var DEN=[500,200,100,50,20,10];
+function buildDenom(){var b=$("denBody");DEN.forEach(function(d){var tr=document.createElement("tr");
+  tr.innerHTML='<td>'+d+'</td><td><input class="dcount" data-d="'+d+'" type="number" min="0" placeholder="0" style="text-align:center"></td><td class="amt" id="da_'+d+'">0.00</td>';b.appendChild(tr);});
+  var tr=document.createElement("tr");tr.innerHTML='<td>Coins</td><td><input id="coinCount" type="number" min="0" placeholder="0" style="text-align:center"></td><td><input id="coinAmt" type="number" step="0.01" placeholder="0" style="text-align:center"></td>';b.appendChild(tr);
+  b.addEventListener("input",recalcColl);}
+function recalcColl(){
+  var due=parseFloat($("repBody").dataset.due)||0,total=0;
+  document.querySelectorAll(".coll").forEach(function(el){var v=evalSum(el.value);$("cv_"+el.dataset.f).value=num(v);total+=v;});
+  $("collTot").textContent=money(total);
+  var diff=total-due;$("seVal").textContent=(diff>=0?"+":"−")+num(Math.abs(diff));
+  var it=0; INTERIM_STATUS.forEach(function(r){ if(r.status==="APPROVED") it+=r.amount; }); $("intTot").textContent=money(it);
+  var dt=0;DEN.forEach(function(x){var c=parseInt(document.querySelector('.dcount[data-d="'+x+'"]').value)||0;var a=x*c;$("da_"+x).textContent=num(a);dt+=a;});
+  dt+=parseFloat($("coinAmt").value)||0;$("denTot").textContent=num(dt);
+  var cash=evalSum(document.querySelector('.coll[data-f="cash"]').value)||0;
+  setMatch("denMatch","denMatchRow",dt,cash);
+  setMatch("intMatch","intMatchRow",it,cash);
+}
+function setMatch(valId,rowId,amount,cash){
+  var d=round2(amount-cash), el=$(valId), row=$(rowId);
+  if((cash===0)&&(amount===0)){ el.textContent="—"; el.style.color="var(--muted)"; row.classList.remove("warn"); return; }
+  if(Math.abs(d)<0.005){ el.textContent="✓ matches "+money(cash); el.style.color="var(--good)"; row.classList.remove("warn"); }
+  else{ el.textContent=(d>0?"✗ "+money(d)+" over":"✗ "+money(Math.abs(d))+" short")+" (cash "+money(cash)+")"; el.style.color="var(--bad)"; row.classList.add("warn"); }
+}
+
+(function(){ var eb=$("editReadingsBtn"); if(!eb) return;
+  eb.onclick=function(){
+    var inputs=$("readBody").querySelectorAll(".oedit");
+    if(!inputs.length) return;
+    if(eb.dataset.on==="1"){
+      [].forEach.call(inputs,function(i){ i.readOnly=true; i.style.background=""; i.style.borderColor=""; });
+      eb.dataset.on=""; eb.textContent="✏️ Edit CA readings";
+      var eh=$("editHint"); if(eh) eh.textContent="Override wrong Opening/Closing values uploaded by the CA. Nozzle Test stays supervisor-entered.";
+    } else {
+      [].forEach.call(inputs,function(i){ i.readOnly=false; i.style.background="#fff7e6"; i.style.borderColor="var(--accent,#f5a623)"; });
+      eb.dataset.on="1"; eb.textContent="🔓 Editing on — values unlocked";
+      var eh2=$("editHint"); if(eh2) eh2.textContent="Change Opening/Closing; Volume & Value update live. You'll be asked for a reason when you finalize.";
+    }
+  };
+})();
+$("finalizeBtn").onclick=function(){
+  if(PREVIEW){msg("Preview only","Log in to actually finalise the DCR.");return;}
+  if(!S.pickedCA){$("repErr").textContent="Pick a CA first.";return;}
+  var cashChk=evalSum(document.querySelector('.coll[data-f="cash"]').value)||0;
+  var denChk=0;DEN.forEach(function(x){denChk+=x*(parseInt(document.querySelector('.dcount[data-d="'+x+'"]').value)||0);});denChk+=parseFloat($("coinAmt").value)||0;
+  var intChk=0; INTERIM_STATUS.forEach(function(r){ if(r.status==="APPROVED") intChk+=r.amount; });
+  var pending=INTERIM_STATUS.filter(function(r){ return r.status==="PENDING"; });
+  var warns=[];
+  if(Math.abs(round2(denChk-cashChk))>=0.005) warns.push("Denomination "+money(denChk)+" does not match Cash "+money(cashChk));
+  if(Math.abs(round2(intChk-cashChk))>=0.005) warns.push("Interim (approved) "+money(intChk)+" does not match Cash "+money(cashChk));
+  if(pending.length) warns.push(pending.length+" interim request(s) still pending CA approval");
+  if(warns.length && !window.confirm("Cash does not tally:\n- "+warns.join("\n- ")+"\n\nFinalise anyway?")) return;
+  var coll={},total=0;COLL.forEach(function(c){var v=round2(evalSum(document.querySelector('.coll[data-f="'+c[0]+'"]').value));coll[c[0]]=v;total+=v;});coll.total=round2(total);
+  var den={total:0,notes:{}},dt=0;DEN.forEach(function(x){var c=parseInt(document.querySelector('.dcount[data-d="'+x+'"]').value)||0;den.notes["n"+x]={count:c,amount:round2(x*c)};dt+=x*c;});
+  var cc=parseInt($("coinCount").value)||0,ca=parseFloat($("coinAmt").value)||0;den.notes.coins={count:cc,amount:round2(ca)};dt+=ca;den.total=round2(dt);
+  var tests={};
+  $("readBody").querySelectorAll("tr[data-key]").forEach(function(tr){ var ti=tr.querySelector(".ntest"); tests[tr.dataset.key]=ti?(parseFloat(ti.value)||0):0; });
+  var _packed=($("packedAmt")&&$("packedAmt").value!=="")?round2(parseFloat($("packedAmt").value)||0):"";
+  var readingEdits={},anyEdit=false;
+  $("readBody").querySelectorAll("tr[data-key]").forEach(function(tr){
+    var oi=tr.querySelector('.oedit[data-role="open"]'), ci=tr.querySelector('.oedit[data-role="close"]');
+    if(!oi||!ci) return;
+    if(String(oi.value)!==String(oi.dataset.orig)||String(ci.value)!==String(ci.dataset.orig)){
+      readingEdits[tr.dataset.key]={opening:round2(parseFloat(oi.value)||0),closing:round2(parseFloat(ci.value)||0)}; anyEdit=true;
+    }
+  });
+  var editNote="";
+  if(anyEdit){
+    var why=window.prompt("You changed one or more CA-uploaded readings.\nWhy did you edit them? (leave blank to use the default note)","");
+    editNote=(why&&why.trim())?why.trim():"These readings have been edited by the supervisor.";
+  }
+  var payload={meta:{date:$("repDate").value,caName:S.pickedCA,shiftLeader:""},collection:coll,denomination:den,tests:tests,packedProducts:_packed,readingEdits:readingEdits,editNote:editNote};
+  var b=$("finalizeBtn");b.disabled=true;b.innerHTML='<span class="spin"></span> Finalising…';$("repErr").textContent="";
+  call("finalizeDCR",{payload:payload}).then(function(res){b.disabled=false;b.textContent="✅ Finalize DCR for this CA";
+    if(res&&res.ok){msg("✓ DCR finalised","Wrote <b>"+res.rows+"</b> nozzle row(s) for "+S.pickedCA+".<br>Sales Due "+money(res.salesValueDue)+" · Collection "+money(res.totalCollection)+" · Short/Excess "+money(res.shortExcess));pickCA(S.pickedCA,document.querySelector("#caList button.sel"));}
+    else msg("Could not finalise",(res&&res.error)||"unknown");
+  }).catch(function(e){b.disabled=false;b.textContent="✅ Finalize DCR for this CA";$("repErr").textContent=(e&&e.message)||e;});
+};
+
+/* ---- session helpers ---- */
+function sessionSave_(u,p,res){
+  try{ localStorage.setItem('dcrSup',JSON.stringify({username:u,password:p,role:res.role,name:res.name,ts:Date.now()})); }catch(e){}
+}
+function sessionClear_(){ try{ localStorage.removeItem('dcrSup'); }catch(e){} }
+function enterApp_(res){
+  S.name=res.name;
+  $("who").innerHTML='<span>'+res.name+'</span><button id="logout">Logout</button>';
+  $("logout").onclick=function(){ sessionClear_(); disarmExitGuard(); location.reload(); };
+  $("loginScreen").classList.add("hide");$("app").classList.remove("hide");
+  boot(); armExitGuard();
+}
+/* ---- auto session restore on page load ---- */
+(function(){
+  try{
+    var sess=JSON.parse(localStorage.getItem('dcrSup')||'null');
+    if(!sess||!sess.username||!sess.password) return;
+    if((Date.now()-sess.ts)>12*60*60*1000){ sessionClear_(); return; } // 12h shift expiry
+    var btn=$("loginBtn"); btn.disabled=true; btn.innerHTML='<span class="spin"></span> Restoring session…';
+    call("login",{username:sess.username,password:sess.password}).then(function(res){
+      btn.disabled=false; btn.textContent="Log in";
+      if(res&&res.ok&&String(res.role).toUpperCase()==="SUPERVISOR"){
+        sessionSave_(sess.username,sess.password,res); // refresh timestamp
+        enterApp_(res);
+      } else { sessionClear_(); }
+    }).catch(function(){ btn.disabled=false; btn.textContent="Log in"; sessionClear_(); });
+  }catch(e){ sessionClear_(); }
+})();
+</script>
+</body>
+</html>
