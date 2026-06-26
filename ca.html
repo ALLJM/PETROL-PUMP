@@ -141,7 +141,7 @@
   /* ---- Fuel Tiles (opening + closing readings) ---- */
   .fuel-tile.nozzle{padding:0;background:#fff}
   .tile-hdr{display:flex;align-items:center;gap:12px;padding:14px 16px 12px;border-bottom:1px solid var(--line)}
-  .tile-badge{width:46px;height:46px;border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0;box-shadow:0 3px 10px rgba(0,0,0,.15)}
+  .tile-badge{width:52px;height:52px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:28px;flex-shrink:0;box-shadow:0 3px 10px rgba(0,0,0,.15)}
   .ft-ms{background:linear-gradient(135deg,#ff6b35,#f5a623)}
   .ft-hs{background:linear-gradient(135deg,#1e3a8a,#3b6ea5)}
   .ft-cng{background:linear-gradient(135deg,#065f46,#1f9d57)}
@@ -149,11 +149,9 @@
   .tile-fmeta{font-size:11.5px;color:var(--muted);margin-top:2px}
   .tile-sbadge{margin-left:auto;font-size:11px;font-weight:700;padding:5px 11px;border-radius:20px;background:#f0f0f0;color:var(--muted);white-space:nowrap;flex-shrink:0}
   .tbadge-done{background:#e6f7ec;color:var(--good)}
-  .tile-scanzone{margin:12px 14px 14px;border:2px dashed var(--line);border-radius:14px;padding:22px 16px;display:flex;flex-direction:column;align-items:center;gap:8px;cursor:pointer;background:var(--soft);transition:border-color .15s,background .15s,transform .1s;user-select:none;-webkit-user-select:none}
+  .tile-scanzone{margin:12px 14px 14px;border:2px dashed var(--line);border-radius:14px;padding:14px 16px;display:flex;flex-direction:column;align-items:center;gap:8px;cursor:pointer;background:var(--soft);transition:border-color .15s,background .15s,transform .1s;user-select:none;-webkit-user-select:none}
   .tile-scanzone:active,.tile-scanzone.scanning{transform:scale(.97);border-color:var(--accent);background:#fff7ea}
   .tile-scanzone.scanning .tile-scanlbl{color:var(--brand)}
-  .tile-camico{font-size:30px;line-height:1;transition:transform .15s}
-  .tile-scanzone:active .tile-camico{transform:scale(1.15)}
   .tile-scanlbl{font-size:13px;font-weight:600;color:var(--muted);text-align:center}
   .tile-open-ref{display:flex;align-items:center;justify-content:space-between;padding:10px 16px 0;font-size:12px}
   .ref-label{color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.3px;font-size:11px}
@@ -506,7 +504,6 @@ function openNozzleCard(nz){
       '<div class="tile-sbadge" data-tbadge>Tap to scan</div>'+
     '</div>'+
     '<div class="tile-scanzone">'+
-      '<div class="tile-camico">📷</div>'+
       '<div class="tile-scanlbl">Tap to capture opening reading</div>'+
     '</div>'+
     '<div class="tile-valzone">'+
@@ -520,6 +517,7 @@ function openNozzleCard(nz){
   $("openNozzles").appendChild(d);
   attachScan(d,"opening");
   d.querySelector('.tile-scanzone').addEventListener('click',function(){d.querySelector('.scanbtn').click();});
+  d.querySelector('.tile-hdr').addEventListener('click',function(){if(d.querySelector('.tile-scanzone').style.display!=='none') d.querySelector('.scanbtn').click();});
   d.querySelector('[data-retake]').addEventListener('click',function(){
     d.querySelector('.tile-scanzone').style.display='';
     d.querySelector('.tile-valzone').style.display='none';
@@ -559,7 +557,6 @@ function closeNozzleCard(n){
     '</div>'+
     '<div class="tile-open-ref"><span class="ref-label">Opening</span><span class="ref-val">'+num(n.opening)+'</span></div>'+
     '<div class="tile-scanzone">'+
-      '<div class="tile-camico">📷</div>'+
       '<div class="tile-scanlbl">Tap to capture closing reading</div>'+
     '</div>'+
     '<div class="tile-valzone">'+
@@ -578,6 +575,8 @@ function closeNozzleCard(n){
   $("closeNozzles").appendChild(d);
   attachScan(d,"closing");
   d.querySelector('.tile-scanzone').addEventListener('click',function(){d.querySelector('.scanbtn').click();});
+  d.querySelector('.tile-hdr').style.cursor='pointer';
+  d.querySelector('.tile-hdr').addEventListener('click',function(){if(d.querySelector('.tile-scanzone').style.display!=='none') d.querySelector('.scanbtn').click();});
   d.querySelector('[data-retake]').addEventListener('click',function(){
     d.querySelector('.tile-scanzone').style.display='';
     d.querySelector('.tile-valzone').style.display='none';
