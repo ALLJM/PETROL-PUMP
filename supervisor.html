@@ -167,10 +167,23 @@ a.ph{color:var(--accent);font-weight:700;text-decoration:none}
 .chartrow{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px}
 @media(max-width:900px){.chartrow{grid-template-columns:1fr}}
 .bars{display:flex;align-items:flex-end;gap:14px;height:180px;padding:10px 4px 0;
-  border-bottom:2px solid var(--line)}
+  border-bottom:2px solid var(--line);position:relative;overflow:visible}
 .barcol{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%}
 .barcol .bv{font-size:11px;font-weight:800;color:var(--ink);margin-bottom:4px;font-variant-numeric:tabular-nums}
 .barcol .bk{font-size:11px;color:var(--muted);margin-top:6px;text-align:center}
+/* packed products */
+.pp-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
+.pp-grid .full{grid-column:1/-1}
+.pp-label{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px}
+.pp-big{font-size:22px;font-weight:800;color:var(--accent);padding-top:2px}
+.pp-unit{font-size:15px;font-weight:700;color:var(--ink);padding-top:6px}
+.pp-mode-row{display:flex;gap:8px}
+.pp-mode-btn{flex:1;padding:9px 4px;border:1.5px solid var(--line);border-radius:8px;background:var(--field);color:var(--ink);font-size:12px;cursor:pointer;font-family:inherit;font-weight:500;transition:.15s}
+.pp-mode-btn.sel{border-color:var(--accent);background:var(--accent-soft);color:var(--accent);font-weight:700}
+.pp-row{display:flex;align-items:center;gap:8px;padding:9px 0;border-bottom:1px solid var(--line);font-size:13px}
+.pp-row:last-child{border:none}
+.pp-tag{font-size:10px;padding:2px 7px;border-radius:99px;background:var(--field);color:var(--muted);font-weight:600}
+.pp-tot-row{display:flex;justify-content:space-between;font-weight:700;font-size:14px;padding-top:10px;border-top:2px solid var(--line);margin-top:4px}
 .barcol .br{width:62%;border-radius:6px 6px 0 0;min-height:3px;transition:height .3s}
 .twocol{display:grid;grid-template-columns:1fr 1fr;gap:14px}
 @media(max-width:900px){.twocol{grid-template-columns:1fr}}
@@ -289,6 +302,7 @@ a.ph{color:var(--accent);font-weight:700;text-decoration:none}
     <a id="navRate">Fuel Rate</a>
     <a id="navRep">Collection Report</a>
     <a id="navDash">Dashboard</a>
+      <a id="navProd">Products</a>
   </nav>
   <div class="main">
 
@@ -474,6 +488,61 @@ a.ph{color:var(--accent);font-weight:700;text-decoration:none}
         </div>
 
       </div>
+
+    <section id="prodView" class="hide">
+      <div class="card">
+        <h2 style="font-size:15px;font-weight:700;margin:0 0 16px">Record Packed Product Sale</h2>
+        <div class="pp-grid">
+          <div>
+            <div class="pp-label">Date</div>
+            <div class="custom-date-wrap">
+              <div class="custom-date-display" id="ppDateDisplay" onclick="toggleCal('ppDate')">
+                <span id="ppDateTxt">Today</span>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+              </div>
+              <div class="custom-cal" id="ppDateCal"></div>
+            </div>
+            <input type="hidden" id="ppDate">
+          </div>
+          <div>
+            <div class="pp-label">CA</div>
+            <select id="ppCA" class="sel" style="width:100%"></select>
+          </div>
+          <div class="full">
+            <div class="pp-label">Product</div>
+            <select id="ppProd" class="sel" style="width:100%"></select>
+          </div>
+          <div>
+            <div class="pp-label">Qty</div>
+            <input type="number" id="ppQty" class="inp" min="1" value="1" style="width:100%;font-size:16px;font-weight:700">
+          </div>
+          <div>
+            <div class="pp-label">Unit Price</div>
+            <div class="pp-unit" id="ppUnitPrice">&mdash;</div>
+          </div>
+          <div class="full">
+            <div class="pp-label">Total Value</div>
+            <div class="pp-big" id="ppTotal">&#8377;0.00</div>
+          </div>
+          <div class="full">
+            <div class="pp-label">Payment Mode</div>
+            <div class="pp-mode-row">
+              <button class="pp-mode-btn sel" data-mode="cash">Cash</button>
+              <button class="pp-mode-btn" data-mode="paytm">Paytm / UPI</button>
+              <button class="pp-mode-btn" data-mode="credit">Credit Card</button>
+            </div>
+          </div>
+        </div>
+        <div class="err" id="ppErr" style="margin-bottom:10px"></div>
+        <button class="btn" id="ppSubmit" style="width:100%">&#43; Record Sale</button>
+      </div>
+      <div class="card" style="margin-top:12px">
+        <h2 style="font-size:15px;font-weight:700;margin:0 0 12px">Packed Sales &mdash; <span id="ppListDate">Today</span></h2>
+        <div id="ppList"><div style="color:var(--muted);font-size:13px;text-align:center;padding:20px 0">No packed sales recorded yet.</div></div>
+        <div class="pp-tot-row" id="ppTotRow" style="display:none"><span>Total</span><span id="ppTot">&#8377;0.00</span></div>
+      </div>
+    </section>
+
     </section>
 
   </div>
@@ -515,6 +584,16 @@ function msg(t,h){$("msgT").textContent=t;$("msgB").innerHTML=h;$("msg").classLi
 $("msgOk").onclick=function(){$("msg").classList.remove("open");};
 
 var PREVIEW=false, REPORT_FINALIZED=false;
+/* ---- packed products ---- */
+var PACKED_PRODUCTS=[
+  {name:"Engine Oil 1L",   unit:"Bottle", price:450},
+  {name:"Engine Oil 4L",   unit:"Can",    price:1600},
+  {name:"Coolant 1L",      unit:"Bottle", price:280},
+  {name:"Bottled Water",   unit:"Bottle", price:20},
+  {name:"Wiper Fluid",     unit:"Bottle", price:120},
+  {name:"Car Shampoo",     unit:"Bottle", price:150}
+];
+var PP_MODE="cash";
 var S={name:"",cas:[],pickedCA:"",allocs:[]};
 
 /* ---- login ---- */
@@ -540,8 +619,8 @@ function doLogin(){
 
 /* ---- nav ---- */
 function nav(which){
-  $("navDisp").classList.toggle("sel",which==="disp");$("navRate").classList.toggle("sel",which==="rate");$("navRep").classList.toggle("sel",which==="rep");$("navDash").classList.toggle("sel",which==="dash");
-  $("dispView").classList.toggle("hide",which!=="disp");$("rateView").classList.toggle("hide",which!=="rate");$("repView").classList.toggle("hide",which!=="rep");$("dashView").classList.toggle("hide",which!=="dash");
+  $("navDisp").classList.toggle("sel",which==="disp");$("navRate").classList.toggle("sel",which==="rate");$("navRep").classList.toggle("sel",which==="rep");$("navDash").classList.toggle("sel",which==="dash");$("navProd").classList.toggle("sel",which==="prod");
+  $("dispView").classList.toggle("hide",which!=="disp");$("rateView").classList.toggle("hide",which!=="rate");$("repView").classList.toggle("hide",which!=="rep");$("dashView").classList.toggle("hide",which!=="dash");$("prodView").classList.toggle("hide",which!=="prod");
   var mainEl=document.querySelector(".main"); if(mainEl) mainEl.classList.toggle("wide", which==="dash");
   if(which==="dash") startDashAuto(); else stopDashAuto();
 }
@@ -549,9 +628,11 @@ $("navDisp").onclick=function(){nav("disp");renderDispensers();};
 $("navRate").onclick=function(){nav("rate");loadRates();};
 $("navRep").onclick=function(){nav("rep");renderCAList();};
 $("navDash").onclick=function(){nav("dash");loadDashboard();};
+$("navProd").onclick=function(){nav("prod");renderProdView();};
 
 function boot(){
-  $("allocDate").value=today();$("repDate").value=today();$("dashFrom").value=today();$("dashTo").value=today();setActivePreset("today");
+  $("allocDate").value=today();
+  $("ppDate").value=today();$("ppDateTxt").textContent=today();$("repDate").value=today();$("dashFrom").value=today();$("dashTo").value=today();setActivePreset("today");
   buildCollBox();buildInterim();buildDenom();
   renderDispensers();                                            /* draw dispensers immediately on arrival */
   call("listCAs",{}).then(function(res){S.cas=(res&&res.cas)||[];});
@@ -723,17 +804,25 @@ function donutSVG(sales, coll, diff){
     /* inner red arc: difference — starts after blue */
     (redArc>0?'<circle cx="60" cy="60" r="'+ri+'" fill="none" stroke="'+redColor+'" stroke-width="10" '+
       'stroke-dasharray="'+redArc.toFixed(1)+' '+ci.toFixed(1)+'" stroke-dashoffset="'+(-(blueArc)).toFixed(1)+'" transform="rotate(-90 60 60)"/>':'')+
-    '<text x="60" y="57" text-anchor="middle" font-size="20" font-weight="800" fill="#13232b">'+pct+'%</text>'+
-    '<text x="60" y="74" text-anchor="middle" font-size="9" fill="#637480">collected</text></svg>';
+    '<text x="60" y="54" text-anchor="middle" dominant-baseline="middle" font-size="15" font-weight="800" fill="#13232b">'+pct+'%</text>'+
+    '<text x="60" y="70" text-anchor="middle" dominant-baseline="middle" font-size="9" fill="#637480">collected</text></svg>';
 }
 function barChart(el,items,colorFn){
-  var max=0;items.forEach(function(x){max=Math.max(max,num0(x.value));});
-  el.innerHTML=items.length?items.map(function(x,i){
+  var max=0,sum=0;
+  items.forEach(function(x){max=Math.max(max,num0(x.value));sum+=num0(x.value);});
+  if(!items.length){el.innerHTML='<div style="color:var(--muted);font-size:13px;align-self:center;margin:auto">No data for this day.</div>';return;}
+  var avg=sum/items.length, avgH=max>0?Math.max(3,Math.round(avg*150/max)):3;
+  var bars=items.map(function(x,i){
     var h=max>0?Math.max(3,Math.round(num0(x.value)*150/max)):3;
     return '<div class="barcol"><div class="bv">&#8377;'+kfmt(x.value)+'</div>'+
       '<div class="br" style="height:'+h+'px;background:'+(colorFn?colorFn(i,x):'var(--brand)')+'"></div>'+
       '<div class="bk">'+esc(x.label)+'</div></div>';
-  }).join(""):'<div style="color:var(--muted);font-size:13px;align-self:center;margin:auto">No data for this day.</div>';
+  }).join("");
+  var avgLine=items.length>1?
+    '<div style="position:absolute;left:0;right:0;bottom:'+avgH+'px;pointer-events:none">'+
+    '<span style="position:absolute;right:4px;top:-17px;font-size:9px;color:var(--muted);white-space:nowrap;font-weight:600">avg ₹'+kfmt(avg)+'</span>'+
+    '<div style="border-top:1.5px dashed var(--muted);opacity:.45"></div></div>':'';
+  el.innerHTML=bars+avgLine;
 }
 function previewDashboardData(){
   var f=$("dashFrom").value||today(), t=$("dashTo").value||f;
@@ -1157,6 +1246,85 @@ document.addEventListener('click',function(e){
     setTimeout(function(){if(inp){var ev=new Event('change',{bubbles:true});inp.dispatchEvent(ev);}},100);
   });
 })();
+
+/* ---- packed products JS ---- */
+function renderProdView(){
+  var caEl=$('ppCA'); caEl.innerHTML='';
+  (S.cas||[]).forEach(function(ca){
+    var o=document.createElement('option'); o.value=ca; o.textContent=ca; caEl.appendChild(o);
+  });
+  if(S.pickedCA) caEl.value=S.pickedCA;
+  var pr=$('ppProd'); pr.innerHTML='';
+  PACKED_PRODUCTS.forEach(function(p,i){
+    var o=document.createElement('option'); o.value=i;
+    o.textContent=p.name+' ('+p.unit+') — '+p.price; pr.appendChild(o);
+  });
+  calcPPTotal();
+  loadPackedSales();
+  document.querySelectorAll('.pp-mode-btn').forEach(function(b){
+    b.classList.toggle('sel',b.dataset.mode===PP_MODE);
+    b.onclick=function(){
+      PP_MODE=b.dataset.mode;
+      document.querySelectorAll('.pp-mode-btn').forEach(function(x){x.classList.toggle('sel',x.dataset.mode===PP_MODE);});
+    };
+  });
+  $('ppProd').onchange=calcPPTotal;
+  $('ppQty').oninput=calcPPTotal;
+  $('ppSubmit').onclick=submitPackedSale;
+}
+function calcPPTotal(){
+  var idx=parseInt($('ppProd').value)||0;
+  var p=PACKED_PRODUCTS[idx]||PACKED_PRODUCTS[0];
+  var qty=Math.max(1,parseInt($('ppQty').value)||1);
+  $('ppUnitPrice').textContent='₹'+p.price.toFixed(2);
+  $('ppTotal').textContent='₹'+(p.price*qty).toFixed(2);
+}
+function submitPackedSale(){
+  var idx=parseInt($('ppProd').value)||0;
+  var p=PACKED_PRODUCTS[idx]||PACKED_PRODUCTS[0];
+  var qty=Math.max(1,parseInt($('ppQty').value)||1);
+  var ca=$('ppCA').value||'';
+  var dt=$('ppDate').value||today();
+  var total=round2(p.price*qty);
+  $('ppErr').textContent='';
+  if(!ca){$('ppErr').textContent='Select a CA.';return;}
+  var btn=$('ppSubmit'); btn.disabled=true; btn.textContent='Saving…';
+  call('createPackedSale',{
+    date:dt, caName:ca, product:p.name, unit:p.unit,
+    qty:qty, unitPrice:p.price, totalValue:total,
+    paymentMode:PP_MODE, supervisor:S.name
+  }).then(function(res){
+    btn.disabled=false; btn.textContent='+ Record Sale';
+    if(res&&res.ok){ $('ppQty').value=1; calcPPTotal(); loadPackedSales(); }
+    else { $('ppErr').textContent=(res&&res.error)||'Failed to save.'; }
+  }).catch(function(e){
+    btn.disabled=false; btn.textContent='+ Record Sale';
+    $('ppErr').textContent='Network error: '+(e.message||e);
+  });
+}
+function loadPackedSales(){
+  var dt=$('ppDate').value||today();
+  $('ppListDate').textContent=dt===today()?'Today':dt;
+  call('getPackedSales',{date:dt}).then(function(res){
+    var list=$('ppList'), totRow=$('ppTotRow'), totEl=$('ppTot');
+    if(!res||!res.ok||!res.sales||!res.sales.length){
+      list.innerHTML='<div style="color:var(--muted);font-size:13px;text-align:center;padding:20px 0">No packed sales recorded yet.</div>';
+      totRow.style.display='none'; return;
+    }
+    var tot=0;
+    list.innerHTML=res.sales.map(function(s){
+      tot+=Number(s.totalValue)||0;
+      var ml=s.paymentMode==='paytm'?'Paytm/UPI':(s.paymentMode==='credit'?'Credit Card':'Cash');
+      return '<div class="pp-row">'+
+        '<div style="flex:1"><b>'+esc(s.product)+'</b> &times;'+s.qty+
+        ' <span style="color:var(--muted);font-size:11px">('+esc(s.caName)+')</span></div>'+
+        '<span class="pp-tag">'+ml+'</span>'+
+        '<b style="margin-left:8px">₹'+num(s.totalValue)+'</b></div>';
+    }).join('');
+    totRow.style.display='flex';
+    totEl.textContent='₹'+tot.toFixed(2);
+  }).catch(function(){});
+}
 
 /* ---- session helpers ---- */
 function sessionSave_(u,p,res){
