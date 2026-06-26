@@ -137,6 +137,38 @@
   .reject-note-wrap.show{display:block}
   .reject-note-wrap input{width:100%;padding:9px 12px;border:1px solid var(--line);border-radius:8px;font-size:14px;font-family:inherit}
   .reject-note-wrap button{margin-top:6px;width:100%;padding:10px;border:none;border-radius:8px;background:var(--bad);color:#fff;font-weight:700;font-size:13px;cursor:pointer}
+
+  /* ---- Fuel Tiles (opening + closing readings) ---- */
+  .fuel-tile.nozzle{padding:0;background:#fff}
+  .tile-hdr{display:flex;align-items:center;gap:12px;padding:14px 16px 12px;border-bottom:1px solid var(--line)}
+  .tile-badge{width:46px;height:46px;border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0;box-shadow:0 3px 10px rgba(0,0,0,.15)}
+  .ft-ms{background:linear-gradient(135deg,#ff6b35,#f5a623)}
+  .ft-hs{background:linear-gradient(135deg,#1e3a8a,#3b6ea5)}
+  .ft-cng{background:linear-gradient(135deg,#065f46,#1f9d57)}
+  .tile-fname{font-size:15px;font-weight:800;font-family:'Manrope',sans-serif;color:var(--ink);line-height:1.2}
+  .tile-fmeta{font-size:11.5px;color:var(--muted);margin-top:2px}
+  .tile-sbadge{margin-left:auto;font-size:11px;font-weight:700;padding:5px 11px;border-radius:20px;background:#f0f0f0;color:var(--muted);white-space:nowrap;flex-shrink:0}
+  .tbadge-done{background:#e6f7ec;color:var(--good)}
+  .tile-scanzone{margin:12px 14px 14px;border:2px dashed var(--line);border-radius:14px;padding:22px 16px;display:flex;flex-direction:column;align-items:center;gap:8px;cursor:pointer;background:var(--soft);transition:border-color .15s,background .15s,transform .1s;user-select:none;-webkit-user-select:none}
+  .tile-scanzone:active,.tile-scanzone.scanning{transform:scale(.97);border-color:var(--accent);background:#fff7ea}
+  .tile-scanzone.scanning .tile-scanlbl{color:var(--brand)}
+  .tile-camico{font-size:30px;line-height:1;transition:transform .15s}
+  .tile-scanzone:active .tile-camico{transform:scale(1.15)}
+  .tile-scanlbl{font-size:13px;font-weight:600;color:var(--muted);text-align:center}
+  .tile-open-ref{display:flex;align-items:center;justify-content:space-between;padding:10px 16px 0;font-size:12px}
+  .ref-label{color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.3px;font-size:11px}
+  .ref-val{font-weight:800;color:var(--ink);font-family:'Manrope',sans-serif;font-size:13px}
+  .tile-valzone{margin:12px 14px 14px;background:linear-gradient(135deg,#f9f7f4,#fff);border:1.5px solid var(--line);border-radius:14px;padding:14px 16px;display:none;align-items:center;justify-content:space-between;gap:12px}
+  .tile-rval{font-size:21px;font-weight:800;font-family:'Manrope',sans-serif;color:var(--ink);letter-spacing:.5px;display:block;line-height:1.2}
+  .tile-rok{font-size:11px;color:var(--good);font-weight:700;margin-top:4px}
+  .tile-retake{font-size:12px;color:var(--muted);text-decoration:underline;cursor:pointer;flex-shrink:0;padding:4px;white-space:nowrap}
+  .tile-close-readings{flex:1;min-width:0}
+  .tcr-row{display:flex;justify-content:space-between;align-items:center;margin:3px 0}
+  .tcr-row span{font-size:12px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.3px}
+  .tcr-row b{font-weight:800;font-family:'Manrope',sans-serif;color:var(--ink);font-size:14px}
+  .tcr-divider{height:1px;background:var(--line);margin:7px 0}
+  .vol-row b{color:var(--brand);font-size:16px}
+  .tile-ewarn{color:var(--bad);font-size:12px;font-weight:600;min-height:14px;padding:0 16px 10px}
 </style>
 </head>
 <body>
@@ -198,7 +230,6 @@
   <section class="card hide" id="openCard">
     <h2><span class="n">3</span> Opening Readings</h2>
     <div class="body">
-      <div class="hint" style="margin-bottom:8px">Photograph each meter, crop to the <b>V</b> line, Read. The value is filled and <b>locked</b>.</div>
       <div id="openNozzles"></div>
     </div>
   </section>
@@ -371,12 +402,23 @@ function liveCapture(which){
 /* ---------- scan wiring (used by open & close cards) ---------- */
 function attachScan(div,which){
   var fileIn=div.querySelector(".scaninput"),msg=div.querySelector("[data-scanmsg]"),btn=div.querySelector(".scanbtn");
+  var szl=div.querySelector('.tile-scanlbl');
+  var szlDefault=szl?szl.textContent:'';
   msg.textContent="📷 Tap Scan — line up the V reading in the orange box.";
   function finish(dataUrl,rect){
     msg.className="scanmsg busy";msg.textContent="⏳ Reading…";
+    if(szl){szl.textContent="⏳ Reading meter…";}
     MeterOCR.readV(dataUrl,rect,OCR_SPACE_KEY).then(function(v){
-      if(v){div.querySelector('[data-f="'+which+'"]').value=v;recalc(div);msg.className="scanmsg okk";msg.textContent="✓ "+which+" = "+v+" (locked)";}
-      else{msg.className="scanmsg errr";msg.textContent="Couldn't read — retake with the V line filling the box.";}
+      if(v){
+        div.querySelector('[data-f="'+which+'"]').value=v;recalc(div);
+        msg.className="scanmsg okk";msg.textContent="✓ "+which+" = "+v+" (locked)";
+        try{div.dispatchEvent(new CustomEvent('tileval',{detail:{which:which,value:v}}));}catch(e){}
+      }
+      else{
+        msg.className="scanmsg errr";msg.textContent="Couldn't read — retake with the V line filling the box.";
+        if(szl){szl.textContent="Couldn't read — tap to retry";}
+        var sz=div.querySelector('.tile-scanzone');if(sz)sz.classList.remove('scanning');
+      }
       stampTimestamp(dataUrl).then(function(st){call("savePhoto",{info:{dataUrl:st,which:which,caName:S.caName,date:S.date,du:S.du,nozzleNo:div.dataset.noz,product:div.dataset.prod}}).then(function(res){if(res&&res.photoUrl)div.dataset[which+"Photo"]=res.photoUrl;}).catch(function(){});});
       btn.disabled=false;
     }).catch(function(e){btn.disabled=false;msg.className="scanmsg errr";msg.textContent="Read failed: "+(e&&e.message?e.message:e);});
@@ -392,9 +434,9 @@ function attachScan(div,which){
     };r.readAsDataURL(f);});
   btn.addEventListener("click",function(){
     if(btn.disabled)return;
-    btn.disabled=true; msg.className="scanmsg busy"; msg.textContent="📷 Opening camera…";
+    btn.disabled=true; msg.className="scanmsg busy"; msg.textContent="📷 Opening camera…"; if(szl){szl.textContent="📷 Opening camera…";} var sz=div.querySelector('.tile-scanzone');if(sz)sz.classList.add('scanning');
     liveCapture(which).then(function(res){
-      if(res===null){ btn.disabled=false; msg.className="scanmsg"; msg.textContent="Cancelled — tap Scan to retry."; return; }
+      if(res===null){ btn.disabled=false; msg.className="scanmsg"; msg.textContent="Cancelled — tap Scan to retry."; if(szl){szl.textContent=szlDefault;} var sz=div.querySelector('.tile-scanzone');if(sz)sz.classList.remove('scanning'); return; }
       if(res.unsupported){ btn.disabled=false; fileFallback(); return; }
       finish(res.dataUrl, res.rect);
     });
@@ -452,27 +494,111 @@ function loadAllocation(){
 
 /* ---------- opening ---------- */
 function openNozzleCard(nz){
-  var prod=nz.product,noNo=nz.nozzleNo;
-  var d=document.createElement("div");d.className="nozzle";d.dataset.noz=noNo;d.dataset.prod=prod;
-  d.innerHTML='<div class="code">Dispenser '+S.du+' &middot; Nozzle '+noNo+' &middot; '+prod+' ('+prodName(prod)+')</div>'+
-    '<label>Opening Reading (photo only)</label><input data-f="opening" readonly placeholder="tap Scan, then crop the V line">'+
-    '<div class="scanrow"><button type="button" class="scanbtn">📷 Scan Opening</button>'+
-    '<input type="file" accept="image/*" capture="environment" class="scaninput" hidden><span class="scanmsg" data-scanmsg></span></div>';
-  $("openNozzles").appendChild(d);attachScan(d,"opening");return d;
+  var prod=nz.product,noNo=nz.nozzleNo,pn=prodName(prod);
+  var cls=prod==='MS'?'ms':(prod==='HS'?'hs':'cng');
+  var ico=prod==='MS'?'⛽':(prod==='HS'?'🛢':'💨');
+  var d=document.createElement("div");
+  d.className="nozzle fuel-tile";d.dataset.noz=noNo;d.dataset.prod=prod;
+  d.innerHTML=
+    '<div class="tile-hdr">'+
+      '<div class="tile-badge ft-'+cls+'">'+ico+'</div>'+
+      '<div class="tile-info"><div class="tile-fname">'+pn+'</div><div class="tile-fmeta">Dispenser '+S.du+' · Nozzle '+noNo+'</div></div>'+
+      '<div class="tile-sbadge" data-tbadge>Tap to scan</div>'+
+    '</div>'+
+    '<div class="tile-scanzone">'+
+      '<div class="tile-camico">📷</div>'+
+      '<div class="tile-scanlbl">Tap to capture opening reading</div>'+
+    '</div>'+
+    '<div class="tile-valzone">'+
+      '<div><div class="tile-rval" data-reading></div><div class="tile-rok">✓ Opening captured</div></div>'+
+      '<span class="tile-retake" data-retake>Retake</span>'+
+    '</div>'+
+    '<div style="display:none"><button type="button" class="scanbtn"></button>'+
+    '<input type="file" accept="image/*" capture="environment" class="scaninput" hidden>'+
+    '<span class="scanmsg" data-scanmsg></span></div>'+
+    '<input data-f="opening" readonly style="display:none">';
+  $("openNozzles").appendChild(d);
+  attachScan(d,"opening");
+  d.querySelector('.tile-scanzone').addEventListener('click',function(){d.querySelector('.scanbtn').click();});
+  d.querySelector('[data-retake]').addEventListener('click',function(){
+    d.querySelector('.tile-scanzone').style.display='';
+    d.querySelector('.tile-valzone').style.display='none';
+    d.querySelector('[data-reading]').textContent='';
+    d.querySelector('[data-f="opening"]').value='';
+    d.querySelector('[data-tbadge]').textContent='Tap to scan';
+    d.querySelector('[data-tbadge]').className='tile-sbadge';
+    d.querySelector('.tile-scanlbl').textContent='Tap to capture opening reading';
+    d.querySelector('.tile-scanzone').classList.remove('scanning');
+  });
+  d.addEventListener('tileval',function(e){
+    if(e.detail.which==='opening'){
+      d.querySelector('.tile-scanzone').style.display='none';
+      d.querySelector('.tile-valzone').style.display='flex';
+      d.querySelector('[data-reading]').textContent=e.detail.value;
+      d.querySelector('[data-tbadge]').textContent='✓ Done';
+      d.querySelector('[data-tbadge]').className='tile-sbadge tbadge-done';
+    }
+  });
+  return d;
 }
 function buildOpening(){$("openNozzles").innerHTML="";(S.nozzles||[]).forEach(function(nz){openNozzleCard(nz);});}
 
 /* ---------- closing ---------- */
 function closeNozzleCard(n){
-  var d=document.createElement("div");d.className="nozzle";d.dataset.noz=n.nozzleNo;d.dataset.prod=n.product;d.dataset.key=n.key;d.dataset.opening=n.opening;d.dataset.close="1";
-  d.innerHTML='<div class="code">Dispenser '+S.du+' &middot; '+n.product+' ('+prodName(n.product)+')</div>'+
-    '<label>Opening (this morning)</label><input readonly value="'+n.opening+'">'+
-    '<label style="margin-top:8px">Closing Reading (photo only)</label><input data-f="closing" readonly placeholder="tap Scan, then crop the V line">'+
-    '<div class="scanrow"><button type="button" class="scanbtn">📷 Scan Closing</button>'+
-    '<input type="file" accept="image/*" capture="environment" class="scaninput" hidden><span class="scanmsg" data-scanmsg></span></div>'+
-    '<div class="ewarn" data-e></div>'+
-    '<div class="pillrow"><div class="pill"><span>Opening</span><b>'+num(n.opening)+'</b></div><div class="pill"><span>Sales Volume (L)</span><b data-o="vol">0.00</b></div></div>';
-  $("closeNozzles").appendChild(d);attachScan(d,"closing");return d;
+  var prod=n.product,noNo=n.nozzleNo,pn=prodName(prod);
+  var cls=prod==='MS'?'ms':(prod==='HS'?'hs':'cng');
+  var ico=prod==='MS'?'⛽':(prod==='HS'?'🛢':'💨');
+  var d=document.createElement("div");
+  d.className="nozzle fuel-tile";d.dataset.noz=noNo;d.dataset.prod=prod;
+  d.dataset.key=n.key;d.dataset.opening=n.opening;d.dataset.close="1";
+  d.innerHTML=
+    '<div class="tile-hdr">'+
+      '<div class="tile-badge ft-'+cls+'">'+ico+'</div>'+
+      '<div class="tile-info"><div class="tile-fname">'+pn+'</div><div class="tile-fmeta">Dispenser '+S.du+' · Nozzle '+noNo+'</div></div>'+
+      '<div class="tile-sbadge" data-tbadge>Tap to scan</div>'+
+    '</div>'+
+    '<div class="tile-open-ref"><span class="ref-label">Opening</span><span class="ref-val">'+num(n.opening)+'</span></div>'+
+    '<div class="tile-scanzone">'+
+      '<div class="tile-camico">📷</div>'+
+      '<div class="tile-scanlbl">Tap to capture closing reading</div>'+
+    '</div>'+
+    '<div class="tile-valzone">'+
+      '<div class="tile-close-readings">'+
+        '<div class="tcr-row"><span>Closing</span><b data-reading></b></div>'+
+        '<div class="tcr-divider"></div>'+
+        '<div class="tcr-row vol-row"><span>Volume</span><b data-o="vol">0.00</b></div>'+
+      '</div>'+
+      '<span class="tile-retake" data-retake>Retake</span>'+
+    '</div>'+
+    '<div class="tile-ewarn" data-e></div>'+
+    '<div style="display:none"><button type="button" class="scanbtn"></button>'+
+    '<input type="file" accept="image/*" capture="environment" class="scaninput" hidden>'+
+    '<span class="scanmsg" data-scanmsg></span></div>'+
+    '<input data-f="closing" readonly style="display:none">';
+  $("closeNozzles").appendChild(d);
+  attachScan(d,"closing");
+  d.querySelector('.tile-scanzone').addEventListener('click',function(){d.querySelector('.scanbtn').click();});
+  d.querySelector('[data-retake]').addEventListener('click',function(){
+    d.querySelector('.tile-scanzone').style.display='';
+    d.querySelector('.tile-valzone').style.display='none';
+    d.querySelector('[data-f="closing"]').value='';
+    d.querySelector('[data-tbadge]').textContent='Tap to scan';
+    d.querySelector('[data-tbadge]').className='tile-sbadge';
+    d.querySelector('.tile-scanlbl').textContent='Tap to capture closing reading';
+    d.querySelector('.tile-scanzone').classList.remove('scanning');
+    d.querySelector('[data-o="vol"]').textContent='0.00';
+    d.querySelector('[data-e]').textContent='';
+  });
+  d.addEventListener('tileval',function(e){
+    if(e.detail.which==='closing'){
+      d.querySelector('.tile-scanzone').style.display='none';
+      d.querySelector('.tile-valzone').style.display='flex';
+      d.querySelector('[data-reading]').textContent=e.detail.value;
+      d.querySelector('[data-tbadge]').textContent='✓ Done';
+      d.querySelector('[data-tbadge]').className='tile-sbadge tbadge-done';
+    }
+  });
+  return d;
 }
 function loadOpenings(){
   $("closeNozzles").innerHTML="";
@@ -688,4 +814,3 @@ function enterApp_(res){
 </script>
 </body>
 </html>
-   
