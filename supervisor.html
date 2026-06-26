@@ -619,15 +619,43 @@ function kfmt(n){n=Number(n)||0;var s=n<0?"-":"";n=Math.abs(n);
 var PAYDEF=[["cash","Cash in Hand","#0b8a4a"],["card","Credit Card","#2b6cff"],["paytm","Paytm","#7b3ff2"],
   ["fleetCard","Fleet Card","#f5a623"],["mlaCoupon","MLA Coupon","#e0556b"],["insRedeem","Ins Redeem","#13b1c9"]];
 
-function donutSVG(ratio){
-  ratio=Number(ratio)||0;
-  var frac=Math.max(0,Math.min(1,ratio));
-  var pct=Math.round(ratio*100); if(pct>=100&&ratio<1)pct=99; if(pct>100)pct=100;
-  var r=46,c=2*Math.PI*r,off=c*(1-frac);
+function donutSVG(sales, coll, diff){
+  sales=Number(sales)||0; coll=Number(coll)||0; diff=Number(diff)||0;
+  /* pct label */
+  var pct=sales>0?Math.round(coll/sales*100):(coll>0?100:0);
+  if(pct>100)pct=100; if(pct<0)pct=0;
+  /* outer ring: sales full circle */
+  var ro=46, co=2*Math.PI*ro, sw=14;
+  /* inner ring: collection(blue) + |diff|(red) */
+  var ri=28, ci=2*Math.PI*ri;
+  var absDiff=Math.abs(diff);
+  var innerTotal=coll+absDiff;
+  /* minimum arc for red: 4px of circumference */
+  var minRed=4;
+  var redArc, blueArc;
+  if(innerTotal<=0){redArc=0;blueArc=0;}
+  else{
+    redArc=absDiff>0?Math.max(minRed, ci*absDiff/innerTotal):0;
+    blueArc=ci-redArc;
+    if(blueArc<0)blueArc=0;
+  }
+  var diffColor=diff<0?'#e0556b':'#2b6cff'; /* short=red, excess=blue-ish but we keep red for negative */
+  /* collection always blue, diff red when negative */
+  var redColor='#e0556b', blueColor='#2b6cff';
   return '<svg width="120" height="120" viewBox="0 0 120 120">'+
-    '<circle cx="60" cy="60" r="'+r+'" fill="none" stroke="#eef2f4" stroke-width="16"/>'+
-    '<circle cx="60" cy="60" r="'+r+'" fill="none" stroke="#0b8a4a" stroke-width="16" stroke-linecap="round" '+
-      'stroke-dasharray="'+c.toFixed(1)+'" stroke-dashoffset="'+off.toFixed(1)+'" transform="rotate(-90 60 60)"/>'+
+    /* outer track */
+    '<circle cx="60" cy="60" r="'+ro+'" fill="none" stroke="#d8e8de" stroke-width="'+sw+'"/>'+
+    /* outer arc: full green (sales) */
+    '<circle cx="60" cy="60" r="'+ro+'" fill="none" stroke="#0b8a4a" stroke-width="'+sw+'" '+
+      'stroke-dasharray="'+co.toFixed(1)+' 0" transform="rotate(-90 60 60)"/>'+
+    /* inner track */
+    '<circle cx="60" cy="60" r="'+ri+'" fill="none" stroke="#e8eef2" stroke-width="10"/>'+
+    /* inner blue arc: collection */
+    (blueArc>0?'<circle cx="60" cy="60" r="'+ri+'" fill="none" stroke="'+blueColor+'" stroke-width="10" '+
+      'stroke-dasharray="'+blueArc.toFixed(1)+' '+ci.toFixed(1)+'" transform="rotate(-90 60 60)"/>':'')+
+    /* inner red arc: difference — starts after blue */
+    (redArc>0?'<circle cx="60" cy="60" r="'+ri+'" fill="none" stroke="'+redColor+'" stroke-width="10" '+
+      'stroke-dasharray="'+redArc.toFixed(1)+' '+ci.toFixed(1)+'" stroke-dashoffset="'+(-(blueArc)).toFixed(1)+'" transform="rotate(-90 60 60)"/>':'')+
     '<text x="60" y="57" text-anchor="middle" font-size="20" font-weight="800" fill="#13232b">'+pct+'%</text>'+
     '<text x="60" y="74" text-anchor="middle" font-size="9" fill="#637480">collected</text></svg>';
 }
@@ -672,13 +700,12 @@ function renderDashboard(d){
     return '<div class="pay"><span class="nm"><span class="sw" style="background:'+p[2]+'"></span>'+p[1]+'</span><span class="am">'+money(num0(t[p[0]]))+'</span></div>';
   }).join("");
   $("payTot").textContent=money(coll);
-  /* donut: collected vs sales */
-  var frac=sales>0?coll/sales:(coll>0?1:0);
-  $("donut").innerHTML=donutSVG(frac);
+  /* donut: concentric rings — outer=sales, inner=collection+diff */
+  $("donut").innerHTML=donutSVG(sales, coll, se);
   $("donutLeg").innerHTML=
     '<div><span class="nm"><span class="sw" style="background:#0b8a4a"></span>Sales</span><b>'+money(sales)+'</b></div>'+
     '<div><span class="nm"><span class="sw" style="background:#2b6cff"></span>Collection</span><b>'+money(coll)+'</b></div>'+
-    '<div><span class="nm"><span class="sw" style="background:'+(se<0?'#c0392b':'#637480')+'"></span>Difference</span><b>'+signedMoney(se)+'</b></div>';
+    '<div><span class="nm"><span class="sw" style="background:#e0556b"></span>Difference</span><b>'+signedMoney(se)+'</b></div>';
   /* product value bars */
   var prodColors=["#2b6cff","#e0556b","#0b8a4a","#f5a623"];
   barChart($("barsProd"),(d.byProduct||[]).map(function(x){return {label:prodName(x.product),value:num0(x.salesValueDue)};}),
