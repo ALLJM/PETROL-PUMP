@@ -1160,7 +1160,7 @@ document.addEventListener('click',function(e){
 
 /* ---- session helpers ---- */
 function sessionSave_(u,p,res){
-  try{ localStorage.setItem('dcrSup',JSON.stringify({username:u,password:p,name:res.name||u,role:res.role})); }catch(e){}
+  try{ localStorage.setItem('dcrSup',JSON.stringify({username:u,pass:p,name:res.name||u,role:res.role})); }catch(e){}
 }
 function sessionLoad_(){
   try{ var s=JSON.parse(localStorage.getItem('dcrSup')||'{}');
