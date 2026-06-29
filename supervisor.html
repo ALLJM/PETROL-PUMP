@@ -487,6 +487,12 @@ a.ph{color:var(--accent);font-weight:700;text-decoration:none}
           </div>
         </div>
 
+        <div class="pcard" id="dashPackedCard" style="margin-top:12px">
+          <h3>Packed Product Sales <span style="font-size:12px;font-weight:500;color:var(--muted)">(Supervisor)</span></h3>
+          <table><thead><tr><th>Total Value</th><th>Cash</th><th>Paytm / UPI</th><th>Credit Card</th></tr></thead>
+            <tbody id="dashPackedBody"></tbody></table>
+        </div>
+
       </div>
 
     </section>
@@ -864,6 +870,9 @@ function renderDashboard(d){
   /* tables */
   $("dashCAs").innerHTML=(d.byCA&&d.byCA.length)?d.byCA.map(function(x){return '<tr><td>'+esc(x.caName)+'</td><td>'+num(x.shifts||0)+'</td><td>'+num(x.netQty)+'</td><td>'+money(x.salesValueDue)+'</td><td>'+money(x.totalCollection)+'</td><td>'+signedMoney(x.shortExcess)+'</td></tr>';}).join(""):emptyRow(6,"No CA totals for this period.");
   $("dashAlerts").innerHTML=(d.alerts&&d.alerts.length)?d.alerts.map(function(x){return '<tr><td>'+esc(x.date)+'</td><td>'+esc(x.caName)+'</td><td>'+esc(x.du)+'</td><td>'+signedMoney(x.shortExcess)+'</td></tr>';}).join(""):emptyRow(4,"No short/excess alerts.");
+  var pp=d.packedTotals||{totalValue:0,cash:0,paytm:0,credit:0};
+  $("dashPackedCard").style.display=pp.totalValue>0?'':'none';
+  $("dashPackedBody").innerHTML='<tr><td>'+money(pp.totalValue)+'</td><td>'+money(pp.cash)+'</td><td>'+money(pp.paytm)+'</td><td>'+money(pp.credit)+'</td></tr>';
   /* daily breakdown for multi-day ranges */
   var bd=(d.byDate||[]);
   if(bd.length>1){
@@ -882,7 +891,7 @@ function loadDashboard(){
   $("dashPeriod").textContent="Showing: "+periodLabel_(f,t);
   $("dashErr").textContent="";
   var b=$("dashRefresh");b.disabled=true;b.innerHTML='<span class="spin"></span> Loading…';
-  call("getDashboard",{startDate:f,endDate:t}).then(function(res){
+  call("getDashboard",{startDate:f,endDate:t,supervisorName:S.name||""}).then(function(res){
     b.disabled=false;b.innerHTML="&#8635; Refresh";
     if(!res||!res.ok){$("dashErr").textContent=(res&&res.error)||"Could not load dashboard. If you just updated the script, redeploy Code.gs (New version).";renderDashboard(previewDashboardData());return;}
     renderDashboard(res);
@@ -898,7 +907,26 @@ $("dashTo").addEventListener("change",function(){CUR_PRESET="custom";setActivePr
 /* ---- COLLECTION REPORT ---- */
 function renderCAList(){
   var l=$("caList");l.innerHTML="";S.pickedCA="";$("repBody").classList.add("hide");$("repEmpty").classList.remove("hide");
-  S.cas.forEach(function(c){var btn=document.createElement("button");btn.textContent=c;btn.onclick=function(){pickCA(c,btn);};l.appendChild(btn);});
+  var date=$("repDate").value||today();
+  call("getAllocations",{date:date}).then(function(res){
+    var allocs=(res&&res.allocations)||[];
+    var myNameL=(S.name||"").trim().toLowerCase();
+    var myCAs=[],seen={};
+    allocs.forEach(function(a){
+      if(String(a.shiftLeader).trim().toLowerCase()===myNameL){
+        var cn=String(a.caName).trim();
+        if(cn&&!seen[cn.toLowerCase()]){seen[cn.toLowerCase()]=true;myCAs.push(cn);}
+      }
+    });
+    if(myCAs.length===0){
+      /* no allocations yet — show all CAs as fallback */
+      S.cas.forEach(function(c){var btn=document.createElement("button");btn.textContent=c;btn.onclick=function(){pickCA(c,btn);};l.appendChild(btn);});
+    } else {
+      myCAs.forEach(function(c){var btn=document.createElement("button");btn.textContent=c;btn.onclick=function(){pickCA(c,btn);};l.appendChild(btn);});
+    }
+  }).catch(function(){
+    S.cas.forEach(function(c){var btn=document.createElement("button");btn.textContent=c;btn.onclick=function(){pickCA(c,btn);};l.appendChild(btn);});
+  });
 }
 function rowVal_(tr){
   var vol=parseFloat(tr.dataset.vol)||0, rate=parseFloat(tr.dataset.rate)||0;
@@ -1137,7 +1165,7 @@ $("finalizeBtn").onclick=function(){
     var why=window.prompt("You changed one or more CA-uploaded readings.\nWhy did you edit them? (leave blank to use the default note)","");
     editNote=(why&&why.trim())?why.trim():"These readings have been edited by the supervisor.";
   }
-  var payload={meta:{date:$("repDate").value,caName:S.pickedCA,shiftLeader:""},collection:coll,denomination:den,tests:tests,packedProducts:_packed,readingEdits:readingEdits,editNote:editNote};
+  var payload={meta:{date:$("repDate").value,caName:S.pickedCA,shiftLeader:S.name||""},collection:coll,denomination:den,tests:tests,packedProducts:_packed,readingEdits:readingEdits,editNote:editNote};
   var b=$("finalizeBtn");b.disabled=true;b.innerHTML='<span class="spin"></span> Finalising…';$("repErr").textContent="";
   call("finalizeDCR",{payload:payload}).then(function(res){b.disabled=false;b.textContent="✅ Finalize DCR for this CA";
     if(res&&res.ok){msg("✓ DCR finalised","Wrote <b>"+res.rows+"</b> nozzle row(s) for "+S.pickedCA+".<br>Sales Due "+money(res.salesValueDue)+" · Collection "+money(res.totalCollection)+" · Short/Excess "+money(res.shortExcess));pickCA(S.pickedCA,document.querySelector("#caList button.sel"));}
