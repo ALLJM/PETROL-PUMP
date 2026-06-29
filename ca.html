@@ -359,10 +359,10 @@ var MeterOCR=(function(){
 
 /* ---------- Claude OCR via GAS ---------- */
 function readViaGAS(dataUrl, rect){
-  return MeterOCR.toImage(dataUrl).then(function(im){
-    var b64 = MeterOCR.preprocess(im, rect);
-    return call('extractReading', {imageBase64:b64, mediaType:'image/png'});
-  }).then(function(res){
+  var m = dataUrl.match(/^data:([^;]+);base64,/);
+  var mediaType = m ? m[1] : 'image/jpeg';
+  var base64 = dataUrl.replace(/^data:[^;]+;base64,/, '');
+  return call('extractReading', {imageBase64:base64, mediaType:mediaType}).then(function(res){
     if(!res||!res.ok) throw new Error((res&&res.error)||'OCR failed');
     return res.reading||'';
   });
