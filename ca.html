@@ -317,6 +317,7 @@ input[readonly]{background:var(--field);font-weight:700;color:var(--ink)}
 
 <script>
 var WEB_APP_URL="https://script.google.com/macros/s/AKfycbxtlsiv4upVm05ovhOA2Uzoc5ctnDG7SuQij91AkBLj7x3aiz-Z74zdTtcq902b1Vsm/exec";
+var OCR_SPACE_KEY="K84802403888957";
 function $(id){return document.getElementById(id);}
 function call(action,data){var pl={action:action};if(data)for(var k in data)pl[k]=data[k];
   return fetch(WEB_APP_URL,{method:"POST",body:JSON.stringify(pl)}).then(function(r){return r.json();});}
@@ -354,32 +355,8 @@ var MeterOCR=(function(){
   function toImage(src){if(src&&src.tagName==="IMG"&&src.naturalWidth)return Promise.resolve(src);
     return new Promise(function(res,rej){var im=new Image();im.onload=function(){res(im);};im.onerror=function(){rej(new Error("load fail"));};im.src=src;});}
   function readV(src,rect,key){return toImage(src).then(function(im){return ocr(preprocess(im,rect),key);}).then(function(t){return parseV(t);});}
-  return {readV:readV,parseV:parseV,preprocess:preprocess,toImage:toImage};
+  return {readV:readV,parseV:parseV};
 })();
-
-/* ---------- Claude OCR via GAS ---------- */
-function readViaGAS(dataUrl, rect){
-  return new Promise(function(resolve, reject){
-    var img = new Image();
-    img.onload = function(){
-      var sx = (rect&&rect.w>8) ? rect.x : 0;
-      var sy = (rect&&rect.h>8) ? rect.y : 0;
-      var sw = (rect&&rect.w>8) ? rect.w : img.naturalWidth;
-      var sh = (rect&&rect.h>8) ? rect.h : img.naturalHeight;
-      var c = document.createElement('canvas');
-      c.width = sw; c.height = sh;
-      c.getContext('2d').drawImage(img, sx, sy, sw, sh, 0, 0, sw, sh);
-      var cropped = c.toDataURL('image/jpeg', 1.0);
-      var base64 = cropped.replace(/^data:[^;]+;base64,/, '');
-      call('extractReading', {imageBase64:base64, mediaType:'image/jpeg'}).then(function(res){
-        if(!res||!res.ok) throw new Error((res&&res.error)||'OCR failed');
-        resolve(res.reading||'');
-      }).catch(reject);
-    };
-    img.onerror = function(){ reject(new Error('Image load failed')); };
-    img.src = dataUrl;
-  });
-}
 
 /* ---------- timestamp burn + cropper ---------- */
 function stampTimestamp(dataUrl){return new Promise(function(resolve){var img=new Image();
@@ -454,7 +431,7 @@ function attachScan(div,which){
   function finish(dataUrl,rect){
     msg.className="scanmsg busy";msg.textContent="⏳ Reading…";
     if(szl){szl.textContent="⏳ Reading meter…";}
-    readViaGAS(dataUrl,rect).then(function(v){
+    MeterOCR.readV(dataUrl,rect,OCR_SPACE_KEY).then(function(v){
       if(v){
         div.querySelector('[data-f="'+which+'"]').value=v;recalc(div);
         msg.className="scanmsg okk";msg.textContent="✓ "+which+" = "+v+" (locked)";
