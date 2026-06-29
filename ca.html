@@ -359,12 +359,25 @@ var MeterOCR=(function(){
 
 /* ---------- Claude OCR via GAS ---------- */
 function readViaGAS(dataUrl, rect){
-  var m = dataUrl.match(/^data:([^;]+);base64,/);
-  var mediaType = m ? m[1] : 'image/jpeg';
-  var base64 = dataUrl.replace(/^data:[^;]+;base64,/, '');
-  return call('extractReading', {imageBase64:base64, mediaType:mediaType}).then(function(res){
-    if(!res||!res.ok) throw new Error((res&&res.error)||'OCR failed');
-    return res.reading||'';
+  return new Promise(function(resolve, reject){
+    var img = new Image();
+    img.onload = function(){
+      var sx = (rect&&rect.w>8) ? rect.x : 0;
+      var sy = (rect&&rect.h>8) ? rect.y : 0;
+      var sw = (rect&&rect.w>8) ? rect.w : img.naturalWidth;
+      var sh = (rect&&rect.h>8) ? rect.h : img.naturalHeight;
+      var c = document.createElement('canvas');
+      c.width = sw; c.height = sh;
+      c.getContext('2d').drawImage(img, sx, sy, sw, sh, 0, 0, sw, sh);
+      var cropped = c.toDataURL('image/jpeg', 1.0);
+      var base64 = cropped.replace(/^data:[^;]+;base64,/, '');
+      call('extractReading', {imageBase64:base64, mediaType:'image/jpeg'}).then(function(res){
+        if(!res||!res.ok) throw new Error((res&&res.error)||'OCR failed');
+        resolve(res.reading||'');
+      }).catch(reject);
+    };
+    img.onerror = function(){ reject(new Error('Image load failed')); };
+    img.src = dataUrl;
   });
 }
 
