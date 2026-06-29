@@ -595,7 +595,14 @@ $("p").addEventListener("keydown",function(e){if(e.key==="Enter")doLogin();});
 function doLogin(){
   var u=$("u").value.trim(),p=$("p").value;if(!u||!p){$("loginErr").textContent="Enter username and password.";return;}
   var b=$("loginBtn");b.disabled=true;b.innerHTML='<span class="spin"></span> Checking…';$("loginErr").textContent="";
-  call("login",{username:u,password:p}).then(function(res){
+  call("login",{username:s.username,password:s.pass}).then(function(res){
+    if(res&&res.ok&&String(res.role).toUpperCase()==="SUPERVISOR"){ sessionSave_(s.username,s.pass,res); enterApp_(res); }
+    else{ try{ localStorage.removeItem('dcrSup'); }catch(e){} }
+  }).catch(function(){});
+})();
+</script>
+</body>
+</html>ame:u,password:p}).then(function(res){
     b.disabled=false;b.textContent="Log in";
     if(!res||!res.ok){$("loginErr").textContent=(res&&res.error)||"Login failed";return;}
     if(String(res.role).toUpperCase()!=="SUPERVISOR"){$("loginErr").textContent="This is the Supervisor app. CA accounts cannot log in here.";return;}
@@ -619,7 +626,7 @@ $("navProd").onclick=function(){nav("prod");renderProdView();};
 
 function boot(){
   $("allocDate").value=today();
-  $("ppDate").value=today();$("ppDateTxt").textContent=today();$("repDate").value=today();$("dashFrom").value=today();$("dashTo").value=today();setActivePreset("today");
+  $("ppDate").value=today();$("repDate").value=today();$("dashFrom").value=today();$("dashTo").value=today();setActivePreset("today");
   buildCollBox();buildInterim();buildDenom();
   renderDispensers();                                            /* draw dispensers immediately on arrival */
   call("listCAs",{}).then(function(res){S.cas=(res&&res.cas)||[];});
@@ -1195,7 +1202,7 @@ function renderCal(id){
     var cls='cal-day';
     if(dt.getTime()===today.getTime())cls+=' today';
     if(selDate&&dt.getTime()===selDate.getTime())cls+=' sel';
-    html+='<button class="'+cls+'" onclick="pickDate(\'+id+\',' +iso+ '\')">'+d+'</button>';
+    html+='<button class="'+cls+'" onclick="pickDate(\''+id+'\',\''+iso+'\')">'+d+'</button>';
   }
   html+='</div>';
   cal.innerHTML=html;
@@ -1355,4 +1362,4 @@ function doLogout(){
 })();
 </script>
 </body>
-</html>    
+</html>

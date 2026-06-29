@@ -845,13 +845,11 @@ function enterApp_(res){
     if(!sess||!sess.username||!sess.password) return;
     if((Date.now()-sess.ts)>12*60*60*1000){ sessionClear_(); return; }
     var btn=$("loginBtn"); btn.disabled=true; btn.innerHTML='<span class="spin"></span> Restoring session…';
-    call("login",{username:sess.username,password:sess.password}).then(function(res){
-      btn.disabled=false; btn.textContent="Log in";
-      if(res&&res.ok&&String(res.role).toUpperCase()==="CA"){
+      if(res&&res.ok&&String(res.role).toUpperCase()==='CA'){
         sessionSave_(sess.username,sess.password,res);
         enterApp_(res);
       } else { sessionClear_(); }
-    }).catch(function(){ btn.disabled=false; btn.textContent="Log in"; sessionClear_(); });
+    }).catch(function(){ btn.disabled=false; btn.textContent='Log in'; sessionClear_(); });
   }catch(e){ sessionClear_(); }
 })();
 </script>
