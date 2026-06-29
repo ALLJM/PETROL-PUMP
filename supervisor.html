@@ -505,16 +505,21 @@ a.ph{color:var(--accent);font-weight:700;text-decoration:none}
           </div>
           <div>
             <label>Qty</label>
-            <input type="number" id="ppQty" min="1" value="1" style="font-size:18px;font-weight:700">
+            <select id="ppQty" style="font-size:16px;font-weight:700">
+              <option value="1">1</option><option value="2">2</option><option value="3">3</option>
+              <option value="4">4</option><option value="5">5</option><option value="6">6</option>
+              <option value="7">7</option><option value="custom">Enter value…</option>
+            </select>
+            <input type="number" id="ppQtyCustom" min="1" placeholder="Enter qty" style="display:none;margin-top:6px;font-size:16px;font-weight:700">
           </div>
-          <div>
+          <div id="ppUnitPriceRow" style="display:none">
             <label>Unit Price</label>
-            <div style="padding:11px 0;font-size:18px;font-weight:700;color:var(--ink)" id="ppUnitPrice">&mdash;</div>
+            <div style="padding:11px 0;font-size:18px;font-weight:700;color:var(--ink)" id="ppUnitPrice"></div>
           </div>
         </div>
         <div style="background:var(--accent-soft);border:1.5px solid var(--accent);border-radius:var(--r-input);padding:14px 16px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center">
           <span style="font-size:12px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.04em">Total Value</span>
-          <span style="font-size:26px;font-weight:800;color:var(--accent)" id="ppTotal">&#8377;0.00</span>
+          <span style="font-size:26px;font-weight:800;color:var(--accent)" id="ppTotal">&mdash;</span>
         </div>
         <label style="margin-bottom:6px">Payment Mode</label>
         <div class="pp-mode-row" style="margin-bottom:14px">
@@ -1238,11 +1243,16 @@ document.addEventListener('click',function(e){
 function renderProdView(){
   if(!$('ppDate').value) $('ppDate').value=today();
   var pr=$('ppProd'); pr.innerHTML='';
+  var ph=document.createElement('option'); ph.value=''; ph.textContent='Choose Product';
+  ph.disabled=true; ph.selected=true; ph.style.color='var(--muted)'; pr.appendChild(ph);
   PACKED_PRODUCTS.forEach(function(p,i){
     var o=document.createElement('option'); o.value=i;
-    o.textContent=p.name+' ('+p.unit+') — ₹'+p.price; pr.appendChild(o);
+    o.textContent=p.name+' ('+p.unit+')'; pr.appendChild(o);
   });
-  calcPPTotal();
+  $('ppUnitPriceRow').style.display='none';
+  $('ppTotal').textContent='—';
+  $('ppQty').value='1';
+  $('ppQtyCustom').style.display='none';
   loadPackedSales();
   document.querySelectorAll('.pp-mode-btn').forEach(function(b){
     b.classList.toggle('sel',b.dataset.mode===PP_MODE);
@@ -1253,20 +1263,30 @@ function renderProdView(){
   });
   $('ppDate').onchange=loadPackedSales;
   $('ppProd').onchange=calcPPTotal;
-  $('ppQty').oninput=calcPPTotal;
+  $('ppQty').onchange=function(){
+    if($('ppQty').value==='custom'){ $('ppQtyCustom').style.display=''; $('ppQtyCustom').focus(); }
+    else { $('ppQtyCustom').style.display='none'; }
+    calcPPTotal();
+  };
+  $('ppQtyCustom').oninput=calcPPTotal;
   $('ppSubmit').onclick=submitPackedSale;
 }
 function calcPPTotal(){
-  var idx=parseInt($('ppProd').value)||0;
-  var p=PACKED_PRODUCTS[idx]||PACKED_PRODUCTS[0];
-  var qty=Math.max(1,parseInt($('ppQty').value)||1);
+  var idx=$('ppProd').value;
+  if(idx===''||idx===null){ $('ppUnitPriceRow').style.display='none'; $('ppTotal').textContent='—'; return; }
+  var p=PACKED_PRODUCTS[parseInt(idx)]||PACKED_PRODUCTS[0];
+  var qtyVal=$('ppQty').value==='custom' ? parseInt($('ppQtyCustom').value)||1 : parseInt($('ppQty').value)||1;
+  var qty=Math.max(1,qtyVal);
+  $('ppUnitPriceRow').style.display='';
   $('ppUnitPrice').textContent='₹'+p.price.toFixed(2);
   $('ppTotal').textContent='₹'+(p.price*qty).toFixed(2);
 }
 function submitPackedSale(){
-  var idx=parseInt($('ppProd').value)||0;
-  var p=PACKED_PRODUCTS[idx]||PACKED_PRODUCTS[0];
-  var qty=Math.max(1,parseInt($('ppQty').value)||1);
+  var pidx=$('ppProd').value;
+  if(pidx===''||pidx===null){ $('ppErr').textContent='Please choose a product.'; return; }
+  var p=PACKED_PRODUCTS[parseInt(pidx)]||PACKED_PRODUCTS[0];
+  var qtyVal=$('ppQty').value==='custom' ? parseInt($('ppQtyCustom').value)||1 : parseInt($('ppQty').value)||1;
+  var qty=Math.max(1,qtyVal);
   var dt=$('ppDate').value||today();
   var total=round2(p.price*qty);
   $('ppErr').textContent='';
@@ -1277,8 +1297,11 @@ function submitPackedSale(){
     paymentMode:PP_MODE, supervisor:S.name
   }).then(function(res){
     btn.disabled=false; btn.textContent='+ Record Sale';
-    if(res&&res.ok){ $('ppQty').value=1; calcPPTotal(); loadPackedSales(); }
-    else { $('ppErr').textContent=(res&&res.error)||'Failed to save.'; }
+    if(res&&res.ok){
+      $('ppProd').value=''; $('ppQty').value='1'; $('ppQtyCustom').style.display='none';
+      $('ppUnitPriceRow').style.display='none'; $('ppTotal').textContent='—';
+      loadPackedSales();
+    } else { $('ppErr').textContent=(res&&res.error)||'Failed to save.'; }
   }).catch(function(e){
     btn.disabled=false; btn.textContent='+ Record Sale';
     $('ppErr').textContent='Network error: '+(e.message||e);
