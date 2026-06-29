@@ -595,14 +595,7 @@ $("p").addEventListener("keydown",function(e){if(e.key==="Enter")doLogin();});
 function doLogin(){
   var u=$("u").value.trim(),p=$("p").value;if(!u||!p){$("loginErr").textContent="Enter username and password.";return;}
   var b=$("loginBtn");b.disabled=true;b.innerHTML='<span class="spin"></span> Checking…';$("loginErr").textContent="";
-  call("login",{username:s.username,password:s.pass}).then(function(res){
-    if(res&&res.ok&&String(res.role).toUpperCase()==="SUPERVISOR"){ sessionSave_(s.username,s.pass,res); enterApp_(res); }
-    else{ try{ localStorage.removeItem('dcrSup'); }catch(e){} }
-  }).catch(function(){});
-})();
-</script>
-</body>
-</html>ame:u,password:p}).then(function(res){
+  call("login",{username:u,password:p}).then(function(res){
     b.disabled=false;b.textContent="Log in";
     if(!res||!res.ok){$("loginErr").textContent=(res&&res.error)||"Login failed";return;}
     if(String(res.role).toUpperCase()!=="SUPERVISOR"){$("loginErr").textContent="This is the Supervisor app. CA accounts cannot log in here.";return;}
@@ -678,32 +671,24 @@ function renderDispensers(){
 function openAlloc(du,sides){
   sides=sides||{};var cng=(du>=5);
   $("allocTitle").textContent="Assign Dispenser "+du+(cng?" (CNG)":" (MS / HSD)");
-  $("aCAA").innerHTML='<option value="">Loading…</option>';
-  $("aCAB").innerHTML='<option value="">Loading…</option>';
-  $("aErr").textContent="";
-  $("allocModal").dataset.du=du;$("allocModal").dataset.cng=cng?"1":"";
-  $("allocModal").classList.add("open");
-  $("aShift").value=(sides.A&&sides.A.shift)||(sides.B&&sides.B.shift)||"S1";
-  $("aLeader").value=S.name||"";
+  var thisDu=String(du), takenElsewhere={};
+  (S.allocs||[]).forEach(function(a){ if(String(a.du)!==thisDu) takenElsewhere[String(a.caName).trim().toLowerCase()]=String(a.du); });
+  var avail=S.cas.filter(function(c){ return !takenElsewhere[String(c).trim().toLowerCase()]; });
+  var opts='<option value="">— none —</option>'+avail.map(function(c){return '<option>'+c+'</option>';}).join("");
+  $("aCAA").innerHTML=opts;$("aCAB").innerHTML=opts;
+  var A=sides.A,B=sides.B;
   if(cng){
     $("aLabA").innerHTML="CA — both CNG nozzles (N1 &amp; N2)";
     $("aLabB").parentNode.style.display="none";
+    $("aCAA").value=A?A.caName:"";
   }else{
     $("aLabA").innerHTML="Side A — Nozzles 1 &amp; 3";
     $("aLabB").innerHTML="Side B — Nozzles 2 &amp; 4";
     $("aLabB").parentNode.style.display="";
+    $("aCAA").value=A?A.caName:"";$("aCAB").value=B?B.caName:"";
   }
-  call("listCAs",{}).then(function(res){
-    S.cas=(res&&res.cas)||[];
-    var thisDu=String(du), takenElsewhere={};
-    (S.allocs||[]).forEach(function(a){ if(String(a.du)!==thisDu) takenElsewhere[String(a.caName).trim().toLowerCase()]=String(a.du); });
-    var avail=S.cas.filter(function(c){ return !takenElsewhere[String(c).trim().toLowerCase()]; });
-    var opts='<option value="">— none —</option>'+avail.map(function(c){return '<option>'+c+'</option>';}).join("");
-    $("aCAA").innerHTML=opts;$("aCAB").innerHTML=opts;
-    var A=sides.A,B=sides.B;
-    if(cng){ $("aCAA").value=A?A.caName:""; }
-    else{ $("aCAA").value=A?A.caName:"";$("aCAB").value=B?B.caName:""; }
-  }).catch(function(){ $("aErr").textContent="Failed to load CAs. Check connection."; });
+  $("aShift").value=(A&&A.shift)||(B&&B.shift)||"S1";$("aLeader").value=S.name||"";   /* shift leader = the logged-in supervisor */
+  $("aErr").textContent="";$("allocModal").dataset.du=du;$("allocModal").dataset.cng=cng?"1":"";$("allocModal").classList.add("open");
 }
 $("aCancel").onclick=function(){$("allocModal").classList.remove("open");};
 $("aSave").onclick=function(){
@@ -1202,7 +1187,7 @@ function renderCal(id){
     var cls='cal-day';
     if(dt.getTime()===today.getTime())cls+=' today';
     if(selDate&&dt.getTime()===selDate.getTime())cls+=' sel';
-    html+='<button class="'+cls+'" onclick="pickDate(\''+id+'\',\''+iso+'\')">'+d+'</button>';
+    html+='<button class="'+cls+'" onclick="pickDate(\'+id+\',' +iso+ '\')">'+d+'</button>';
   }
   html+='</div>';
   cal.innerHTML=html;
