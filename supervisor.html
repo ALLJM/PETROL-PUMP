@@ -80,6 +80,15 @@ h2.t{margin:0 0 16px;font-size:20px;font-weight:800;color:var(--ink)}
 .clrwrap{display:flex;flex-direction:column;gap:5px;margin-top:8px}
 .clrbtn{border:1px solid var(--line);background:var(--surface);color:var(--bad);border-radius:var(--r-input);padding:5px 8px;font-size:11px;font-weight:700;cursor:pointer}
 .clrbtn:hover{background:var(--bad-soft)}
+.disp-rdg{margin:7px 0 2px;border-top:1px solid var(--line);padding-top:7px;text-align:left}
+.disp-rdg .rdg-lbl{font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.3px;color:var(--faint);margin-bottom:3px}
+.disp-rdg .rdg-row{display:flex;justify-content:space-between;align-items:center;gap:6px;padding:2px 0;font-size:11px;font-variant-numeric:tabular-nums}
+.disp-rdg .rdg-nz{font-weight:700;color:var(--ink);min-width:32px;flex-shrink:0}
+.disp-rdg .rdg-pr{font-size:10px;color:var(--muted);font-weight:600;flex-shrink:0}
+.disp-rdg .rdg-vals{color:var(--ink);opacity:.8;font-size:11px;text-align:right;flex:1}
+.disp-rdg .rdg-vals .rdg-open{color:var(--muted)}
+.disp-rdg .rdg-vals .rdg-close{color:var(--ink);font-weight:700}
+.disp-rdg .rdg-none{font-size:11px;color:var(--faint);font-style:italic}
 .panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-card);
   box-shadow:var(--shadow);padding:18px;margin-bottom:16px}
 .grid{display:grid;gap:12px}.g2{grid-template-columns:1fr 1fr}.g3{grid-template-columns:1fr 1fr 1fr}
@@ -641,7 +650,38 @@ function boot(){
 
 /* ---- DISPENSERS ---- */
 function pumpSVG(){return '<svg width="40" height="46" viewBox="0 0 40 46"><rect x="6" y="6" width="20" height="34" rx="3" fill="#0b5d3b"/><rect x="9" y="10" width="14" height="10" rx="2" fill="#bfe7d3"/><rect x="9" y="24" width="14" height="3" rx="1.5" fill="#9fd8bd"/><rect x="9" y="29" width="10" height="3" rx="1.5" fill="#9fd8bd"/><path d="M26 14 h4 a3 3 0 0 1 3 3 v12 a3 3 0 0 0 3 3" fill="none" stroke="#f5a623" stroke-width="3"/><rect x="4" y="40" width="24" height="4" rx="2" fill="#08482e"/></svg>';}
-function drawDisp_(map){
+
+/* Format a meter reading to 1 decimal place */
+function fmtRdg_(n){ n=Number(n)||0; return n.toLocaleString('en-IN',{minimumFractionDigits:1,maximumFractionDigits:1}); }
+
+/* Build "last shift readings" HTML block for a dispenser card */
+function buildRdgHtml_(du, readings){
+  if(!readings) return '';
+  var nozzles=(du>=5)?['1','2']:['1','2','3','4'];
+  var rows='', found=false;
+  nozzles.forEach(function(nz){
+    var key=String(du)+'|'+nz;
+    var r=readings[key];
+    if(!r) return;
+    found=true;
+    var pr=r.product||(du>=5?'CNG':(nz==='1'||nz==='2'?'MS':'HS'));
+    var prColor=pr==='MS'?'#F5A623':(pr==='HS'?'#1E3A8A':'#16A34A');
+    rows+='<div class="rdg-row">'+
+      '<span class="rdg-nz">N'+nz+'</span>'+
+      '<span class="rdg-pr" style="color:'+prColor+'">'+pr+'</span>'+
+      '<span class="rdg-vals">'+
+        '<span class="rdg-open">'+fmtRdg_(r.opening)+'</span>'+
+        '<span style="color:var(--faint);margin:0 3px">→</span>'+
+        '<span class="rdg-close">'+fmtRdg_(r.closing)+'</span>'+
+      '</span>'+
+    '</div>';
+  });
+  if(!found) return '<div class="disp-rdg"><span class="rdg-none">No prior reading</span></div>';
+  return '<div class="disp-rdg"><div class="rdg-lbl">Last Shift · Open → Close</div>'+rows+'</div>';
+}
+
+function drawDisp_(map, readings){
+  readings=readings||{};
   var g=$("dispGrid");g.innerHTML="";
   for(var n=1;n<=6;n++){
     var prod=(n>=5)?"CNG":"MS / HSD";var s=map[String(n)]||{};var A=s.A,B=s.B;var any=A||B;
@@ -653,7 +693,7 @@ function drawDisp_(map){
       if(A) clears+='<button class="clrbtn" data-du="'+n+'" data-side="A">✕ Clear A · '+A.caName+'</button>';
       if(B) clears+='<button class="clrbtn" data-du="'+n+'" data-side="B">✕ Clear B · '+B.caName+'</button>'; }
     var d=document.createElement("div");d.className="disp"+(any?" assigned":"");d.dataset.du=n;
-    d.innerHTML='<div class="no">'+n+'</div>'+pumpSVG()+'<div class="pr">'+prod+'</div><div class="as">'+asHtml+'</div>'+(clears?'<div class="clrwrap">'+clears+'</div>':'');
+    d.innerHTML='<div class="no">'+n+'</div>'+pumpSVG()+buildRdgHtml_(n,readings)+'<div class="pr">'+prod+'</div><div class="as">'+asHtml+'</div>'+(clears?'<div class="clrwrap">'+clears+'</div>':'');
     d.onclick=(function(num,sd){return function(){openAlloc(num,sd);};})(n,s);
     g.appendChild(d);
   }
@@ -672,12 +712,17 @@ function clearAlloc(du,side){
 }
 function renderDispensers(){
   var date=$("allocDate").value;
-  drawDisp_({});                 /* show the 6 dispensers instantly, before the network call */
-  call("getAllocations",{date:date}).then(function(res){
+  drawDisp_({},{});  /* show immediately before network */
+  Promise.all([
+    call("getAllocations",{date:date}),
+    call("getLastShiftReadings",{date:date})
+  ]).then(function(results){
+    var res=results[0], rdgRes=results[1];
     S.allocs=(res&&res.allocations)||[];
     var map={};S.allocs.forEach(function(a){var k=String(a.du);if(!map[k])map[k]={};map[k][String(a.side||'A').toUpperCase()]=a;});
-    drawDisp_(map);
-  }).catch(function(){});
+    var rdgs=(rdgRes&&rdgRes.readings)||{};
+    drawDisp_(map, rdgs);
+  }).catch(function(){ drawDisp_({},{}); });
 }
 function openAlloc(du,sides){
   sides=sides||{};var cng=(du>=5);
