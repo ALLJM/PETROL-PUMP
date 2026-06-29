@@ -317,7 +317,6 @@ input[readonly]{background:var(--field);font-weight:700;color:var(--ink)}
 
 <script>
 var WEB_APP_URL="https://script.google.com/macros/s/AKfycbxtlsiv4upVm05ovhOA2Uzoc5ctnDG7SuQij91AkBLj7x3aiz-Z74zdTtcq902b1Vsm/exec";
-var OCR_SPACE_KEY="K84802403888957";
 function $(id){return document.getElementById(id);}
 function call(action,data){var pl={action:action};if(data)for(var k in data)pl[k]=data[k];
   return fetch(WEB_APP_URL,{method:"POST",body:JSON.stringify(pl)}).then(function(r){return r.json();});}
@@ -355,8 +354,19 @@ var MeterOCR=(function(){
   function toImage(src){if(src&&src.tagName==="IMG"&&src.naturalWidth)return Promise.resolve(src);
     return new Promise(function(res,rej){var im=new Image();im.onload=function(){res(im);};im.onerror=function(){rej(new Error("load fail"));};im.src=src;});}
   function readV(src,rect,key){return toImage(src).then(function(im){return ocr(preprocess(im,rect),key);}).then(function(t){return parseV(t);});}
-  return {readV:readV,parseV:parseV};
+  return {readV:readV,parseV:parseV,preprocess:preprocess,toImage:toImage};
 })();
+
+/* ---------- Claude OCR via GAS ---------- */
+function readViaGAS(dataUrl, rect){
+  return MeterOCR.toImage(dataUrl).then(function(im){
+    var b64 = MeterOCR.preprocess(im, rect);
+    return call('extractReading', {imageBase64:b64, mediaType:'image/png'});
+  }).then(function(res){
+    if(!res||!res.ok) throw new Error((res&&res.error)||'OCR failed');
+    return res.reading||'';
+  });
+}
 
 /* ---------- timestamp burn + cropper ---------- */
 function stampTimestamp(dataUrl){return new Promise(function(resolve){var img=new Image();
@@ -431,7 +441,7 @@ function attachScan(div,which){
   function finish(dataUrl,rect){
     msg.className="scanmsg busy";msg.textContent="⏳ Reading…";
     if(szl){szl.textContent="⏳ Reading meter…";}
-    MeterOCR.readV(dataUrl,rect,OCR_SPACE_KEY).then(function(v){
+    readViaGAS(dataUrl,rect).then(function(v){
       if(v){
         div.querySelector('[data-f="'+which+'"]').value=v;recalc(div);
         msg.className="scanmsg okk";msg.textContent="✓ "+which+" = "+v+" (locked)";
