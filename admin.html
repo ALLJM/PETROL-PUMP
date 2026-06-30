@@ -402,8 +402,24 @@ tbody tr:hover{background:var(--field)}
 <script>
 var WEB_APP_URL="https://script.google.com/macros/s/AKfycbxtlsiv4upVm05ovhOA2Uzoc5ctnDG7SuQij91AkBLj7x3aiz-Z74zdTtcq902b1Vsm/exec";
 function $(id){return document.getElementById(id);}
-function call(action,data){var pl={action:action};if(data)for(var k in data)pl[k]=data[k];
-  return fetch(WEB_APP_URL,{method:"POST",body:JSON.stringify(pl)}).then(function(r){return r.json();});}
+function call(action,data){
+  var pl={action:action};
+  if(data)for(var k in data)pl[k]=data[k];
+  return fetch(WEB_APP_URL,{method:"POST",body:JSON.stringify(pl)})
+    .then(function(r){
+      return r.text().then(function(txt){
+        try{ return JSON.parse(txt); }
+        catch(e){
+          /* Apps Script returned HTML (error page / quota / not deployed) */
+          var hint=txt.indexOf('exceeded')>=0?'Quota exceeded. Try again in a minute.':
+                   txt.indexOf('<!DOCTYPE')>=0||txt.indexOf('<html')>=0?'Server error — check Apps Script deployment.':
+                   txt.substring(0,120);
+          return {ok:false,error:hint};
+        }
+      });
+    })
+    .catch(function(e){ return {ok:false,error:'Network error: '+(e&&e.message||e)}; });
+}
 function money(n){return "₹"+(Number(n)||0).toLocaleString("en-IN",{minimumFractionDigits:2,maximumFractionDigits:2});}
 function num(n){return (Number(n)||0).toLocaleString("en-IN",{minimumFractionDigits:2,maximumFractionDigits:2});}
 function round2(n){return Math.round((Number(n)+Number.EPSILON)*100)/100;}

@@ -296,6 +296,18 @@ a.ph{color:var(--accent);font-weight:700;text-decoration:none}
 .vcam-zone{border:2px dashed var(--line);border-radius:12px;padding:26px 16px;text-align:center;cursor:pointer;transition:.15s;background:var(--field);color:var(--muted)}
 .vcam-zone:hover,.vcam-zone:active{border-color:var(--accent);background:var(--accent-soft)}
 .vcam-zone.has-photo{border-color:var(--good);border-style:solid;background:var(--good-soft)}
+/* live camera modal */
+.sup-livemodal{position:fixed;inset:0;background:#000;display:none;flex-direction:column;align-items:center;justify-content:center;z-index:9999;padding:10px}
+.sup-livemodal.open{display:flex}
+.sup-livehead{color:#fff;font-size:13.5px;margin-bottom:8px;text-align:center;max-width:94%}
+.sup-livestage{position:relative;width:100%;max-width:560px;display:flex;align-items:center;justify-content:center;background:#000;border-radius:10px;overflow:hidden}
+.sup-livestage video{width:100%;height:auto;display:block;max-height:72vh}
+.sup-livebox{position:absolute;left:8%;top:47%;width:84%;height:6%;border:2px solid var(--accent);border-radius:8px;box-shadow:0 0 0 2px rgba(0,0,0,.45);pointer-events:none}
+.sup-livebox::after{content:"V";position:absolute;left:6px;top:-22px;color:var(--accent);font-weight:800;font-size:13px;text-shadow:0 1px 3px #000}
+.sup-livehint{position:absolute;left:0;right:0;bottom:8px;text-align:center;color:#fff;font-size:11px;opacity:.85}
+.sup-livebtns{display:flex;gap:10px;margin-top:14px;flex-wrap:wrap;justify-content:center}
+.sup-livebtns button{padding:13px 20px;border-radius:10px;border:none;font-weight:800;font-size:14px;cursor:pointer}
+.sup-livebtns .ok{background:var(--good);color:#fff}.sup-livebtns .ghost{background:#2a2f36;color:#fff}
 .vcard{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-card);box-shadow:var(--shadow);margin-bottom:14px;overflow:hidden}
 .vcard-head{display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid var(--line)}
 
@@ -672,8 +684,24 @@ video.vprev{width:100%;max-width:380px;border-radius:var(--r-input);border:1px s
 <script>
 var WEB_APP_URL="https://script.google.com/macros/s/AKfycbxtlsiv4upVm05ovhOA2Uzoc5ctnDG7SuQij91AkBLj7x3aiz-Z74zdTtcq902b1Vsm/exec";
 function $(id){return document.getElementById(id);}
-function call(action,data){var pl={action:action};if(data)for(var k in data)pl[k]=data[k];
-  return fetch(WEB_APP_URL,{method:"POST",body:JSON.stringify(pl)}).then(function(r){return r.json();});}
+function call(action,data){
+  var pl={action:action};
+  if(data)for(var k in data)pl[k]=data[k];
+  return fetch(WEB_APP_URL,{method:"POST",body:JSON.stringify(pl)})
+    .then(function(r){
+      return r.text().then(function(txt){
+        try{ return JSON.parse(txt); }
+        catch(e){
+          /* Apps Script returned HTML (error page / quota / not deployed) */
+          var hint=txt.indexOf('exceeded')>=0?'Quota exceeded. Try again in a minute.':
+                   txt.indexOf('<!DOCTYPE')>=0||txt.indexOf('<html')>=0?'Server error — check Apps Script deployment.':
+                   txt.substring(0,120);
+          return {ok:false,error:hint};
+        }
+      });
+    })
+    .catch(function(e){ return {ok:false,error:'Network error: '+(e&&e.message||e)}; });
+}
 function money(n){return "₹"+(Number(n)||0).toLocaleString("en-IN",{minimumFractionDigits:2,maximumFractionDigits:2});}
 function num(n){return (Number(n)||0).toLocaleString("en-IN",{minimumFractionDigits:2,maximumFractionDigits:2});}
 function round2(n){return Math.round((Number(n)+Number.EPSILON)*100)/100;}
@@ -1667,17 +1695,28 @@ function renderVNozzles(du){
     var icon     = document.getElementById('vcam_icon_'+nid);
     var lbl      = document.getElementById('vcam_lbl_'+nid);
 
-    function openCam(){ if(photoInp) photoInp.click(); }
+    function openCam(){
+      supLiveCapture().then(function(dataUrl){
+        if(!dataUrl){ return; }
+        if(thumb){ thumb.src=dataUrl; thumb.style.display=''; }
+        if(icon) icon.style.display='none';
+        if(lbl) lbl.textContent='Photo captured ✓';
+        if(camZone) camZone.classList.add('has-photo');
+        /* store dataUrl so saveVReading can read it */
+        camZone._photoData = dataUrl;
+      });
+    }
     if(camZone) camZone.addEventListener('click', openCam);
     if(scanBtn) scanBtn.addEventListener('click', openCam);
+    /* keep file input as fallback (hidden, not shown) */
     if(photoInp) photoInp.addEventListener('change', function(){
       if(!this.files||!this.files[0]) return;
-      var r=new FileReader(); var self=this;
+      var r=new FileReader();
       r.onload=function(e){
         if(thumb){ thumb.src=e.target.result; thumb.style.display=''; }
         if(icon) icon.style.display='none';
         if(lbl) lbl.textContent='Photo captured ✓';
-        if(camZone){ camZone.classList.add('has-photo'); }
+        if(camZone){ camZone.classList.add('has-photo'); camZone._photoData=e.target.result; }
       };
       r.readAsDataURL(this.files[0]);
     });
@@ -1699,6 +1738,33 @@ function vPhotoPreview(input, thumbId){
 function vNozzlePhotoPreview(input, msgId){
   if(!input.files||!input.files[0]) return;
   var el=$(msgId); if(el) el.textContent='✓ Photo taken';
+}
+
+/* live camera modal — same orange-box experience as CA app */
+function supLiveCapture(){
+  return new Promise(function(resolve){
+    if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){ resolve(null); return; }
+    var modal=$('supLiveModal'), video=$('supLiveVideo'), facing='environment', stream=null;
+    function stop(){ try{ if(stream){ stream.getTracks().forEach(function(t){t.stop();}); } }catch(e){} stream=null; }
+    function cleanup(){ $('supLiveCancel').onclick=null; $('supLiveSwitch').onclick=null; $('supLiveCapture').onclick=null; }
+    function start(){ stop();
+      navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:facing}},audio:false}).then(function(s){
+        stream=s; video.srcObject=s; var pl=video.play(); if(pl&&pl.catch)pl.catch(function(){}); modal.classList.add('open');
+      }).catch(function(){ modal.classList.remove('open'); stop(); cleanup(); resolve(null); });
+    }
+    $('supLiveCancel').onclick=function(){ stop(); modal.classList.remove('open'); cleanup(); resolve(null); };
+    $('supLiveSwitch').onclick=function(){ facing=(facing==='environment')?'user':'environment'; start(); };
+    $('supLiveCapture').onclick=function(){
+      try{
+        var vw=video.videoWidth||1280, vh=video.videoHeight||720;
+        var cv=document.createElement('canvas'); cv.width=vw; cv.height=vh;
+        cv.getContext('2d').drawImage(video,0,0,vw,vh);
+        var dataUrl=cv.toDataURL('image/jpeg',0.92);
+        stop(); modal.classList.remove('open'); cleanup(); resolve(dataUrl);
+      }catch(e){ stop(); modal.classList.remove('open'); cleanup(); resolve(null); }
+    };
+    start();
+  });
 }
 function setVTestVol(nid, vol, btn){
   [].forEach.call(document.querySelectorAll('#vtestBtns_'+nid+' .vtest-btn'), function(b){ b.classList.remove("sel"); });
@@ -1733,13 +1799,20 @@ function saveVReading(du, nozzle, product, rdgId, photoId, btn){
     });
   }
 
-  var photoInput=$(photoId);
-  if(photoInput&&photoInput.files&&photoInput.files[0]){
-    var reader=new FileReader();
-    reader.onload=function(e){ doSave_(e.target.result); };
-    reader.readAsDataURL(photoInput.files[0]);
+  /* prefer live-captured dataUrl stored on camZone, fall back to file input */
+  var camZone=document.getElementById('vcam_vnz_'+du+'_'+nozzle);
+  var liveData=camZone&&camZone._photoData?camZone._photoData:null;
+  if(liveData){
+    doSave_(liveData);
   } else {
-    doSave_("");
+    var photoInput=$(photoId);
+    if(photoInput&&photoInput.files&&photoInput.files[0]){
+      var reader=new FileReader();
+      reader.onload=function(e){ doSave_(e.target.result); };
+      reader.readAsDataURL(photoInput.files[0]);
+    } else {
+      doSave_("");
+    }
   }
 }
 
@@ -1916,5 +1989,19 @@ function vVidNozzlePreview(input, vidId){
 }
 
 </script>
+<!-- live camera modal for supervisor verify readings -->
+<div class="sup-livemodal" id="supLiveModal">
+  <div class="sup-livehead">Place the <b>V</b> (litre) reading inside the orange box, then tap <b>Capture</b></div>
+  <div class="sup-livestage" id="supLiveStage">
+    <video id="supLiveVideo" autoplay playsinline muted></video>
+    <div class="sup-livebox"></div>
+    <div class="sup-livehint">Hold steady &middot; fill the box with the V line</div>
+  </div>
+  <div class="sup-livebtns">
+    <button class="ghost" id="supLiveCancel">Cancel</button>
+    <button class="ghost" id="supLiveSwitch">Flip cam</button>
+    <button class="ok" id="supLiveCapture">Capture</button>
+  </div>
+</div>
 </body>
 </html>
