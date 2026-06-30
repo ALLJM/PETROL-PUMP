@@ -332,17 +332,17 @@ video.vprev{width:100%;max-width:380px;border-radius:var(--r-input);border:1px s
 <!-- APP -->
 <div id="app" class="shell hide">
   <nav class="side">
-    <a id="navDisp" class="sel">Dispensers &amp; Shifts</a>
+    <a id="navVerify" class="sel">Verify Readings</a>
+    <a id="navDisp">Dispensers &amp; Shifts</a>
     <a id="navProd">Products</a>
     <a id="navRate">Fuel Rate</a>
     <a id="navRep">Collection Report</a>
     <a id="navDash">Dashboard</a>
-    <a id="navVerify">Verify Readings</a>
   </nav>
   <div class="main">
 
     <!-- DISPENSERS -->
-    <section id="dispView">
+    <section id="dispView" class="hide">
       <h2 class="t">Dispensers &amp; Shift Allocation</h2>
       <div class="toolbar">
         <div class="f"><label>Date</label><div class="custom-date-wrap" id="allocDateWrap">
@@ -579,7 +579,7 @@ video.vprev{width:100%;max-width:380px;border-radius:var(--r-input);border:1px s
     </section>
 
     <!-- VERIFY READINGS -->
-    <section id="verifyView" class="hide">
+    <section id="verifyView">
       <h2 class="t">Supervisor Meter Readings</h2>
       <p style="color:var(--muted);font-size:13px;margin:0 0 14px">Record meter readings for all dispensers at shift start (Opening) and shift end (Closing). Detects discrepancies and tracks nozzle test volumes.</p>
 
@@ -588,9 +588,8 @@ video.vprev{width:100%;max-width:380px;border-radius:var(--r-input);border:1px s
         <div class="f"><label>Date</label><input type="date" id="vDate" style="font-size:15px"></div>
         <div class="f"><label>Shift</label>
           <select id="vShift" style="font-size:15px">
-            <option value="S1">S1 — Morning</option>
-            <option value="S2">S2 — Afternoon</option>
-            <option value="S3">S3 — Night</option>
+            <option value="A">A — Morning</option>
+            <option value="B">B — Closing</option>
           </select>
         </div>
       </div>
@@ -660,7 +659,7 @@ video.vprev{width:100%;max-width:380px;border-radius:var(--r-input);border:1px s
     </div>
     <div style="height:10px"></div>
     <div class="grid g2">
-      <div><label>Shift</label><select id="aShift"><option value="S1">S1</option><option value="S2">S2</option></select></div>
+      <div><label>Shift</label><select id="aShift"><option value="A">A — Morning</option><option value="B">B — Closing</option></select></div>
       <div><label>Shift Leader (you)</label><input id="aLeader" readonly></div>
     </div>
     <div class="err" id="aErr"></div>
@@ -738,11 +737,11 @@ function boot(){
   $("allocDate").value=today();
   $("ppDate").value=today();$("repDate").value=today();$("vDate").value=today();$("dashFrom").value=today();$("dashTo").value=today();setActivePreset("today");
   buildCollBox();buildInterim();buildDenom();
-  renderDispensers();                                            /* draw dispensers immediately on arrival */
   call("listCAs",{}).then(function(res){S.cas=(res&&res.cas)||[];});
   loadUsers_();
   $("allocDate").addEventListener("change",renderDispensers);
   $("repDate").addEventListener("change",renderCAList);
+  nav("verify"); initVerify();
 }
 
 /* ---- DISPENSERS ---- */
@@ -1059,14 +1058,12 @@ function renderCAList(){
       }
     });
     if(myCAs.length===0){
-      /* no allocations yet — show all CAs as fallback */
-      S.cas.forEach(function(c){var btn=document.createElement("button");btn.textContent=c;btn.onclick=function(){pickCA(c,btn);};l.appendChild(btn);});
+      var msg=document.createElement("p"); msg.style.cssText="color:var(--muted);font-size:13px;padding:8px 0;margin:0";
+      msg.textContent="No CAs assigned for this date."; l.appendChild(msg);
     } else {
       myCAs.forEach(function(c){var btn=document.createElement("button");btn.textContent=c;btn.onclick=function(){pickCA(c,btn);};l.appendChild(btn);});
     }
-  }).catch(function(){
-    S.cas.forEach(function(c){var btn=document.createElement("button");btn.textContent=c;btn.onclick=function(){pickCA(c,btn);};l.appendChild(btn);});
-  });
+  }).catch(function(){ var msg=document.createElement("p"); msg.style.cssText="color:var(--bad);font-size:13px;padding:8px 0;margin:0"; msg.textContent="Failed to load allocations."; l.appendChild(msg); });
 }
 function rowVal_(tr){
   var vol=parseFloat(tr.dataset.vol)||0, rate=parseFloat(tr.dataset.rate)||0;
