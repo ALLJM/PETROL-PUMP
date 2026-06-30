@@ -314,7 +314,7 @@ video.vprev{width:100%;max-width:380px;border-radius:var(--r-input);border:1px s
 </header>
 
 <!-- LOGIN -->
-<div id="loginScreen" class="loginwrap">
+<div id="loginScreen" class="loginwrap hide">
   <div class="loginbox">
     <div class="login-eyebrow">Supervisor</div>
     <h1>Sign in</h1>
@@ -725,7 +725,7 @@ function nav(which){
   $("dispView").classList.toggle("hide",which!=="disp");$("rateView").classList.toggle("hide",which!=="rate");$("repView").classList.toggle("hide",which!=="rep");$("dashView").classList.toggle("hide",which!=="dash");$("prodView").classList.toggle("hide",which!=="prod");$("verifyView").classList.toggle("hide",which!=="verify");
   var mainEl=document.querySelector(".main"); if(mainEl) mainEl.classList.toggle("wide", which==="dash");
   if(which==="dash") startDashAuto(); else stopDashAuto();
-  window.scrollTo(0,0);
+  var m=document.querySelector(".main"); if(m) m.scrollTop=0;
 }
 $("navDisp").onclick=function(){nav("disp");renderDispensers();};
 $("navRate").onclick=function(){nav("rate");loadRates();};
@@ -1530,11 +1530,11 @@ function doLogout(){
 /* auto-login on page load */
 (function(){
   var s=sessionLoad_();
-  if(!s) return;
+  if(!s){ $("loginScreen").classList.remove("hide"); return; }
   call("login",{username:s.username,password:s.pass}).then(function(res){
     if(res&&res.ok&&String(res.role).toUpperCase()==="SUPERVISOR"){ sessionSave_(s.username,s.pass,res); enterApp_(res); }
-    else{ try{ localStorage.removeItem('dcrSup'); }catch(e){} }
-  }).catch(function(){});
+    else{ try{ localStorage.removeItem('dcrSup'); }catch(e){} $("loginScreen").classList.remove("hide"); }
+  }).catch(function(){ $("loginScreen").classList.remove("hide"); });
 })();
 
 /* ======================================================
