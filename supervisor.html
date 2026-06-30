@@ -44,7 +44,7 @@ input[readonly]{background:var(--field);font-weight:700;color:var(--ink)}
 .btn.sec:hover{border-color:var(--ink)}
 .err{color:var(--bad);font-size:13px;font-weight:600;margin-top:8px;min-height:16px}
 .ok{color:var(--good);font-weight:700}
-.loginwrap{min-height:78vh;display:flex;align-items:center;justify-content:center;padding:20px}
+.loginwrap{position:fixed;inset:0;z-index:1000;display:flex;align-items:center;justify-content:center;padding:20px;background:var(--bg);}
 .loginbox{max-width:380px;width:100%;text-align:center}
 .loginbox .login-eyebrow{font-size:14px;font-weight:500;color:var(--muted);margin:0 0 4px}
 .loginbox h1{font-size:32px;font-weight:800;margin:0 0 20px;color:var(--ink);letter-spacing:-.5px}
@@ -314,7 +314,7 @@ video.vprev{width:100%;max-width:380px;border-radius:var(--r-input);border:1px s
 </header>
 
 <!-- LOGIN -->
-<div id="loginScreen" class="loginwrap hide">
+<div id="loginScreen" class="loginwrap" style="display:none">
   <div class="loginbox">
     <div class="login-eyebrow">Supervisor</div>
     <h1>Sign in</h1>
@@ -725,7 +725,7 @@ function nav(which){
   $("dispView").classList.toggle("hide",which!=="disp");$("rateView").classList.toggle("hide",which!=="rate");$("repView").classList.toggle("hide",which!=="rep");$("dashView").classList.toggle("hide",which!=="dash");$("prodView").classList.toggle("hide",which!=="prod");$("verifyView").classList.toggle("hide",which!=="verify");
   var mainEl=document.querySelector(".main"); if(mainEl) mainEl.classList.toggle("wide", which==="dash");
   if(which==="dash") startDashAuto(); else stopDashAuto();
-  var m=document.querySelector(".main"); if(m) m.scrollTop=0;
+  setTimeout(function(){ window.scrollTo({top:0,behavior:"instant"}); },10);
 }
 $("navDisp").onclick=function(){nav("disp");renderDispensers();};
 $("navRate").onclick=function(){nav("rate");loadRates();};
@@ -1510,7 +1510,7 @@ function sessionLoad_(){
 }
 function enterApp_(res){
   S.name=res.name||"";
-  $("loginScreen").classList.add("hide");
+  $("loginScreen").style.display="none";
   $("app").classList.remove("hide");
   var w=$("who"); w.innerHTML='<span>'+S.name+'</span><span class="role-pill">'+(res.role||'SUPERVISOR').toUpperCase()+'</span><button id="logoutBtn">Log out</button>';
   $("logoutBtn").onclick=doLogout;
@@ -1522,7 +1522,8 @@ function doLogout(){
   disarmExitGuard();
   try{ localStorage.removeItem('dcrSup'); }catch(e){}
   $("app").classList.add("hide");
-  $("loginScreen").classList.remove("hide");
+  $("loginScreen").style.display="";
+  $("loginScreen").style.display="flex";
   $("u").value="";$("p").value="";$("loginErr").textContent="";
   S={name:"",cas:[],pickedCA:"",allocs:[]};
   stopInterimPoll_();stopDashAuto();
@@ -1530,11 +1531,11 @@ function doLogout(){
 /* auto-login on page load */
 (function(){
   var s=sessionLoad_();
-  if(!s){ $("loginScreen").classList.remove("hide"); return; }
+  if(!s){ $("loginScreen").style.display="flex"; return; }
   call("login",{username:s.username,password:s.pass}).then(function(res){
     if(res&&res.ok&&String(res.role).toUpperCase()==="SUPERVISOR"){ sessionSave_(s.username,s.pass,res); enterApp_(res); }
-    else{ try{ localStorage.removeItem('dcrSup'); }catch(e){} $("loginScreen").classList.remove("hide"); }
-  }).catch(function(){ $("loginScreen").classList.remove("hide"); });
+    else{ try{ localStorage.removeItem('dcrSup'); }catch(e){} $("loginScreen").style.display="flex"; }
+  }).catch(function(){ $("loginScreen").style.display="flex"; });
 })();
 
 /* ======================================================
