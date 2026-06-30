@@ -8,6 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>
 :root{
   --bg:#F5F4F1;--surface:#FFFFFF;--field:#FAFAF8;--ink:#1A1A1A;--muted:#8E8E93;--faint:#B8B8BD;
@@ -1895,37 +1896,92 @@ function stopNozzleVid(btn){
   btn.innerHTML='🎥 Start Recording';
   btn.style.background='var(--ink)'; btn.style.borderColor='var(--ink)'; btn.style.color='#fff';
 }
+/* ── Direct Google Drive upload via Drive API (no Apps Script, no base64 limit) ── */
+var GDRIVE_CLIENT_ID='101154083694-3rr9fs8kooqge30p7ufvct20t3uauj00.apps.googleusercontent.com';
+var GDRIVE_FOLDER_ID=''; /* filled from Code.gs SUP_DATA_FOLDER — set below */
+var _gisTokenClient=null, _gisToken=null;
+
+function getGISToken(){
+  return new Promise(function(resolve,reject){
+    if(_gisToken && _gisToken.expires_at > Date.now()+30000){ resolve(_gisToken.access_token); return; }
+    if(!window.google||!window.google.accounts){ reject(new Error('Google Identity Services not loaded')); return; }
+    if(!_gisTokenClient){
+      _gisTokenClient=google.accounts.oauth2.initTokenClient({
+        client_id:GDRIVE_CLIENT_ID,
+        scope:'https://www.googleapis.com/auth/drive.file',
+        callback:function(resp){
+          if(resp.error){ return; }
+          _gisToken={access_token:resp.access_token, expires_at:Date.now()+(resp.expires_in-60)*1000};
+        }
+      });
+    }
+    /* request fresh token */
+    _gisTokenClient.callback=function(resp){
+      if(resp.error){ reject(new Error(resp.error)); return; }
+      _gisToken={access_token:resp.access_token, expires_at:Date.now()+(resp.expires_in-60)*1000};
+      resolve(_gisToken.access_token);
+    };
+    _gisTokenClient.requestAccessToken({prompt:_gisToken?'':'select_account'});
+  });
+}
+
+function uploadBlobToDrive(blob, fileName, folderId, token){
+  /* multipart upload to Drive API */
+  var meta=JSON.stringify({name:fileName, parents:folderId?[folderId]:[]});
+  var boundary='dcr_vid_boundary_'+Date.now();
+  var delimiter='--'+boundary+'\r\n';
+  var closeDelim='--'+boundary+'--';
+  return new Promise(function(resolve,reject){
+    var reader=new FileReader();
+    reader.onload=function(e){
+      var b64=btoa(e.target.result);
+      var body=delimiter+
+        'Content-Type: application/json; charset=UTF-8\r\n\r\n'+meta+'\r\n'+
+        delimiter+
+        'Content-Type: '+blob.type+'\r\n'+
+        'Content-Transfer-Encoding: base64\r\n\r\n'+
+        b64+'\r\n'+closeDelim;
+      fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,name,webViewLink',{
+        method:'POST',
+        headers:{'Authorization':'Bearer '+token,'Content-Type':'multipart/related; boundary='+boundary},
+        body:body
+      }).then(function(r){ return r.json(); }).then(function(j){
+        if(j.id) resolve(j); else reject(new Error(JSON.stringify(j)));
+      }).catch(reject);
+    };
+    reader.readAsBinaryString(blob);
+  });
+}
+
 function uploadNozzleVidToDrive(){
   if(!NV_BLOB){ $('vRecStatus').textContent='No video to upload.'; return; }
   var btn=$('vUploadDriveBtn');
   if(btn){ btn.disabled=true; btn.textContent='Uploading…'; }
-  $('vRecStatus').textContent='Uploading to Google Drive…';
+  $('vRecStatus').textContent='Signing in to Google Drive…';
   $('vRecStatus').style.color='var(--muted)';
-  var reader=new FileReader();
-  reader.onload=function(e){
-    var b64=e.target.result.split(',')[1];
-    var sess={}; try{ sess=JSON.parse(localStorage.getItem('dcrSup')||'{}'); }catch(ex){}
-    call('saveSupVideo',{
-      videoData:b64, mimeType:NV_BLOB.type||'video/webm',
-      date:$('vDate').value||today(),
-      supervisor:sess.name||S.name||'Supervisor'
-    }).then(function(res){
-      if(btn){ btn.disabled=false; btn.textContent='✓ Saved to Drive'; }
-      if(res&&res.ok){
-        $('vRecStatus').textContent='✓ Saved to Drive: '+res.name;
-        $('vRecStatus').style.color='var(--good)';
-      } else {
-        $('vRecStatus').textContent='Upload failed: '+(res&&res.error||'Unknown error');
-        $('vRecStatus').style.color='var(--bad)';
-        if(btn){ btn.textContent='Retry Upload'; btn.disabled=false; }
-      }
-    }).catch(function(err){
-      $('vRecStatus').textContent='Upload failed: '+(err&&err.message||err);
-      $('vRecStatus').style.color='var(--bad)';
-      if(btn){ btn.disabled=false; btn.textContent='Retry Upload'; }
+
+  var date=$('vDate').value||today();
+  var supName=(S.name||'Supervisor').replace(/[^\w\s]/g,'');
+  var ts=new Date().toISOString().replace(/[:.]/g,'-').slice(0,19);
+  var ext=NV_BLOB.type.indexOf('mp4')>=0?'mp4':(NV_BLOB.type.indexOf('ogg')>=0?'ogg':'webm');
+  var fileName=date+'_'+supName+'_NozzleTest_'+ts+'.'+ext;
+
+  getGISToken().then(function(token){
+    $('vRecStatus').textContent='Uploading to Drive…';
+    /* get the sup data folder ID from backend, then upload */
+    return call('getSupFolderInfo',{date:date}).then(function(res){
+      var folderId=(res&&res.folderId)||'';
+      return uploadBlobToDrive(NV_BLOB, fileName, folderId, token);
     });
-  };
-  reader.readAsDataURL(NV_BLOB);
+  }).then(function(file){
+    if(btn){ btn.disabled=false; btn.textContent='✓ Saved to Drive'; }
+    $('vRecStatus').textContent='✓ Saved: '+file.name;
+    $('vRecStatus').style.color='var(--good)';
+  }).catch(function(err){
+    if(btn){ btn.disabled=false; btn.textContent='Retry Upload'; }
+    $('vRecStatus').textContent='Upload failed: '+(err&&err.message||err);
+    $('vRecStatus').style.color='var(--bad)';
+  });
 }
 function vFilePreview(input){
   if(!input.files||!input.files[0]) return;
