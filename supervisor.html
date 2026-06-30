@@ -86,8 +86,7 @@ h2.t{margin:0 0 16px;font-size:20px;font-weight:800;color:var(--ink)}
 .disp-rdg .rdg-nz{font-weight:700;color:var(--ink);min-width:32px;flex-shrink:0}
 .disp-rdg .rdg-pr{font-size:10px;color:var(--muted);font-weight:600;flex-shrink:0}
 .disp-rdg .rdg-vals{color:var(--ink);opacity:.8;font-size:11px;text-align:right;flex:1}
-.disp-rdg .rdg-vals .rdg-open{color:var(--muted)}
-.disp-rdg .rdg-vals .rdg-close{color:var(--ink);font-weight:700}
+.disp-rdg .rdg-vals .rdg-close{color:var(--ink);font-weight:800;font-size:12px}
 .disp-rdg .rdg-none{font-size:11px;color:var(--faint);font-style:italic}
 .panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-card);
   box-shadow:var(--shadow);padding:18px;margin-bottom:16px}
@@ -670,14 +669,12 @@ function buildRdgHtml_(du, readings){
       '<span class="rdg-nz">N'+nz+'</span>'+
       '<span class="rdg-pr" style="color:'+prColor+'">'+pr+'</span>'+
       '<span class="rdg-vals">'+
-        '<span class="rdg-open">'+fmtRdg_(r.opening)+'</span>'+
-        '<span style="color:var(--faint);margin:0 3px">→</span>'+
         '<span class="rdg-close">'+fmtRdg_(r.closing)+'</span>'+
       '</span>'+
     '</div>';
   });
   if(!found) return '<div class="disp-rdg"><span class="rdg-none">No prior reading</span></div>';
-  return '<div class="disp-rdg"><div class="rdg-lbl">Last Shift · Open → Close</div>'+rows+'</div>';
+  return '<div class="disp-rdg"><div class="rdg-lbl">Expected Opening</div>'+rows+'</div>';
 }
 
 function drawDisp_(map, readings){
