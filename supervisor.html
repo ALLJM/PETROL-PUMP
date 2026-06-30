@@ -806,17 +806,21 @@ function clearAlloc(du,side){
 }
 function renderDispensers(){
   var date=$("allocDate").value;
-  drawDisp_({},{});  /* show immediately before network */
+  /* draw immediately from cached allocs (no flash) */
+  var cachedMap={};
+  (S.allocs||[]).forEach(function(a){var k=String(a.du);if(!cachedMap[k])cachedMap[k]={};cachedMap[k][String(a.side||'A').toUpperCase()]=a;});
+  drawDisp_(cachedMap, S.lastRdgs||{});
+  /* then refresh from server silently */
   Promise.all([
     call("getAllocations",{date:date}),
     call("getLastShiftReadings",{date:date})
   ]).then(function(results){
     var res=results[0], rdgRes=results[1];
     S.allocs=(res&&res.allocations)||[];
+    S.lastRdgs=(rdgRes&&rdgRes.readings)||{};
     var map={};S.allocs.forEach(function(a){var k=String(a.du);if(!map[k])map[k]={};map[k][String(a.side||'A').toUpperCase()]=a;});
-    var rdgs=(rdgRes&&rdgRes.readings)||{};
-    drawDisp_(map, rdgs);
-  }).catch(function(){ drawDisp_({},{}); });
+    drawDisp_(map, S.lastRdgs);
+  }).catch(function(){/* keep current display on error */});
 }
 function openAlloc(du,sides){
   sides=sides||{};var cng=(du>=5);
@@ -856,11 +860,17 @@ $("aSave").onclick=function(){
   var calls=[];
   if(caA)calls.push(call("saveAllocation",{date:$("allocDate").value,du:du,side:"A",shift:shift,caName:caA,shiftLeader:leader}));
   if(caB)calls.push(call("saveAllocation",{date:$("allocDate").value,du:du,side:"B",shift:shift,caName:caB,shiftLeader:leader}));
-  Promise.all(calls).then(function(reslist){b.disabled=false;b.textContent="Save allocation";
+  /* optimistic update — patch S.allocs immediately so tiles don't blank */
+  S.allocs=(S.allocs||[]).filter(function(a){ return String(a.du)!==thisDu; });
+  if(caA) S.allocs.push({du:thisDu,side:'A',caName:caA,shift:shift,shiftLeader:leader});
+  if(caB) S.allocs.push({du:thisDu,side:'B',caName:caB,shift:shift,shiftLeader:leader});
+  $("allocModal").classList.remove("open");
+  renderDispensers(); /* redraws from S.allocs instantly, then confirms with server */
+  Promise.all(calls).then(function(reslist){
+    b.disabled=false;b.textContent="Save allocation";
     var failed=(reslist||[]).filter(function(r){return r&&r.ok===false;});
-    if(failed.length){$("aErr").textContent=failed[0].error||"Could not save allocation.";renderDispensers();return;}
-    $("allocModal").classList.remove("open");renderDispensers();})
-    .catch(function(e){b.disabled=false;b.textContent="Save allocation";$("aErr").textContent=(e&&e.message)||e;});
+    if(failed.length){$("aErr").textContent=failed[0].error||"Could not save allocation.";}
+  }).catch(function(e){b.disabled=false;b.textContent="Save allocation";});
 };
 
 /* ---- RATES ---- */
