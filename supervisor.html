@@ -311,6 +311,7 @@ a.ph{color:var(--accent);font-weight:700;text-decoration:none}
     <a id="navRate">Fuel Rate</a>
     <a id="navRep">Collection Report</a>
     <a id="navDash">Dashboard</a>
+    <a id="navVerify">Verify Readings</a>
   </nav>
   <div class="main">
 
@@ -555,6 +556,52 @@ a.ph{color:var(--accent);font-weight:700;text-decoration:none}
 </div>
 
 <!-- allocation modal -->
+    <!-- VERIFY READINGS -->
+    <section id="verifyView" class="hide">
+      <h2 class="t">Supervisor Verification Readings</h2>
+      <div style="color:var(--muted);font-size:13px;margin-bottom:14px">Take meter photos before the CA starts. Compare against CA readings to detect any discrepancy.</div>
+      <div class="toolbar" style="margin-bottom:16px">
+        <div class="f"><label>Date</label><input type="date" id="vDate" style="font-size:15px"></div>
+        <div class="f"><label>Shift</label>
+          <select id="vShift" style="font-size:15px">
+            <option value="S1">S1 — Morning</option>
+            <option value="S2">S2 — Afternoon</option>
+            <option value="S3">S3 — Night</option>
+          </select>
+        </div>
+        <div class="f"><label>Type</label>
+          <select id="vType" style="font-size:15px">
+            <option value="Opening">Opening Reading</option>
+            <option value="Closing">Closing Reading</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Dispenser selector -->
+      <div style="margin-bottom:14px">
+        <label>Select Dispenser</label>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px" id="vDuBtns"></div>
+      </div>
+
+      <!-- Nozzle entry cards -->
+      <div id="vNozzleCards" class="hide"></div>
+
+      <!-- Comparison table -->
+      <div class="panel" style="margin-top:16px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:10px">
+          <h3 style="margin:0;font-size:15px;font-weight:800">Comparison — Supervisor vs CA</h3>
+          <button class="btn sec" id="vRefreshComp" style="padding:8px 14px;font-size:13px">&#8635; Refresh</button>
+        </div>
+        <div id="vCompErr" class="err"></div>
+        <div class="tblscroll">
+          <table id="vCompTable">
+            <thead><tr><th>Du</th><th>N</th><th>Product</th><th>Type</th><th>Sup Reading</th><th>Sup Time</th><th>CA Reading</th><th>CA Time</th><th>CA Name</th><th>Match</th></tr></thead>
+            <tbody id="vCompBody"><tr><td colspan="10" style="color:var(--muted)">No data yet.</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
 <div class="modal" id="allocModal"><div class="box">
   <h3 id="allocTitle">Assign Dispenser</h3>
   <div class="c">
@@ -625,8 +672,8 @@ function doLogin(){
 
 /* ---- nav ---- */
 function nav(which){
-  $("navDisp").classList.toggle("sel",which==="disp");$("navRate").classList.toggle("sel",which==="rate");$("navRep").classList.toggle("sel",which==="rep");$("navDash").classList.toggle("sel",which==="dash");$("navProd").classList.toggle("sel",which==="prod");
-  $("dispView").classList.toggle("hide",which!=="disp");$("rateView").classList.toggle("hide",which!=="rate");$("repView").classList.toggle("hide",which!=="rep");$("dashView").classList.toggle("hide",which!=="dash");$("prodView").classList.toggle("hide",which!=="prod");
+  $("navDisp").classList.toggle("sel",which==="disp");$("navRate").classList.toggle("sel",which==="rate");$("navRep").classList.toggle("sel",which==="rep");$("navDash").classList.toggle("sel",which==="dash");$("navProd").classList.toggle("sel",which==="prod");$("navVerify").classList.toggle("sel",which==="verify");
+  $("dispView").classList.toggle("hide",which!=="disp");$("rateView").classList.toggle("hide",which!=="rate");$("repView").classList.toggle("hide",which!=="rep");$("dashView").classList.toggle("hide",which!=="dash");$("prodView").classList.toggle("hide",which!=="prod");$("verifyView").classList.toggle("hide",which!=="verify");
   var mainEl=document.querySelector(".main"); if(mainEl) mainEl.classList.toggle("wide", which==="dash");
   if(which==="dash") startDashAuto(); else stopDashAuto();
 }
@@ -635,10 +682,11 @@ $("navRate").onclick=function(){nav("rate");loadRates();};
 $("navRep").onclick=function(){nav("rep");renderCAList();};
 $("navDash").onclick=function(){nav("dash");loadDashboard();};
 $("navProd").onclick=function(){nav("prod");renderProdView();};
+$("navVerify").onclick=function(){nav("verify");initVerify();};
 
 function boot(){
   $("allocDate").value=today();
-  $("ppDate").value=today();$("repDate").value=today();$("dashFrom").value=today();$("dashTo").value=today();setActivePreset("today");
+  $("ppDate").value=today();$("repDate").value=today();$("vDate").value=today();$("dashFrom").value=today();$("dashTo").value=today();setActivePreset("today");
   buildCollBox();buildInterim();buildDenom();
   renderDispensers();                                            /* draw dispensers immediately on arrival */
   call("listCAs",{}).then(function(res){S.cas=(res&&res.cas)||[];});
@@ -1438,6 +1486,149 @@ function doLogout(){
     else{ try{ localStorage.removeItem('dcrSup'); }catch(e){} }
   }).catch(function(){});
 })();
+
+/* ======================================================
+   VERIFY READINGS  —  Supervisor meter photo + reading
+   ====================================================== */
+var VERIFY_DU = null;
+
+function initVerify(){
+  $("vDate").value = today();
+  buildVDuBtns();
+  loadVComparison();
+  $("vRefreshComp").onclick = loadVComparison;
+}
+
+function buildVDuBtns(){
+  var c = $("vDuBtns"); c.innerHTML = "";
+  for(var n=1;n<=6;n++){
+    (function(du){
+      var btn = document.createElement("button");
+      btn.textContent = "Du " + du + (du>=5?" (CNG)":" (MS/HSD)");
+      btn.style.cssText = "border:1.5px solid var(--line);background:var(--surface);color:var(--muted);border-radius:var(--r-pill);padding:8px 16px;font-weight:600;font-size:13px;cursor:pointer;transition:.15s";
+      btn.onclick = function(){
+        [].forEach.call($("vDuBtns").children, function(b){ b.style.background="var(--surface)";b.style.color="var(--muted)";b.style.borderColor="var(--line)"; });
+        btn.style.background="var(--ink)";btn.style.color="#fff";btn.style.borderColor="var(--ink)";
+        VERIFY_DU = du; renderVNozzles(du);
+      };
+      c.appendChild(btn);
+    })(n);
+  }
+}
+
+function renderVNozzles(du){
+  var shift = $("vShift").value, type = $("vType").value;
+  var nozzles = du>=5 ? [{nozzleNo:"1",product:"CNG"},{nozzleNo:"2",product:"CNG"}]
+                      : [{nozzleNo:"1",product:"MS"},{nozzleNo:"3",product:"HS"},
+                         {nozzleNo:"2",product:"MS"},{nozzleNo:"4",product:"HS"}];
+  var c = $("vNozzleCards"); c.innerHTML = ""; c.classList.remove("hide");
+  var prColors = {MS:"#F5A623",HS:"#1E3A8A",CNG:"#16A34A"};
+  nozzles.forEach(function(nz){
+    var card = document.createElement("div");
+    card.className = "panel";
+    card.style.marginBottom = "12px";
+    var nid = "vnz_"+du+"_"+nz.nozzleNo;
+    var col = prColors[nz.product]||"#333";
+    card.innerHTML =
+      '<div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">'+
+        '<span style="background:'+col+';color:#fff;border-radius:var(--r-pill);padding:4px 12px;font-size:12px;font-weight:700">Du'+du+' · N'+nz.nozzleNo+' · '+nz.product+'</span>'+
+        '<span style="font-size:12px;color:var(--muted)">'+type+' Reading</span>'+
+      '</div>'+
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:end">'+
+        '<div>'+
+          '<label>Photo (optional)</label>'+
+          '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">'+
+            '<label style="display:inline-flex;align-items:center;gap:6px;background:var(--field);border:1.5px solid var(--line);border-radius:var(--r-input);padding:9px 14px;cursor:pointer;font-weight:600;font-size:13px;color:var(--ink);margin:0">'+
+              '📷 Take / Upload'+
+              '<input type="file" accept="image/*" capture="environment" style="display:none" id="vphoto_'+nid+'" onchange="vPhotoPreview(this,'vthumb_'+nid+'')">'+
+            '</label>'+
+            '<img id="vthumb_'+nid+'" style="display:none;height:48px;width:64px;object-fit:cover;border-radius:8px;border:1px solid var(--line)">'+
+          '</div>'+
+        '</div>'+
+        '<div>'+
+          '<label>Meter Reading</label>'+
+          '<input type="number" step="0.01" id="vrdg_'+nid+'" placeholder="e.g. 250500.3" style="font-size:16px;font-weight:700">'+
+        '</div>'+
+      '</div>'+
+      '<div style="margin-top:10px;display:flex;gap:10px;align-items:center">'+
+        '<button class="btn" style="padding:10px 20px;font-size:13px" onclick="saveVReading(''+du+'',''+nz.nozzleNo+'',''+nz.product+'','vrdg_'+nid+'','vphoto_'+nid+'',this)">Save Reading</button>'+
+        '<span id="vmsg_'+nid+'" style="font-size:13px;color:var(--muted)"></span>'+
+      '</div>';
+    c.appendChild(card);
+  });
+}
+
+function vPhotoPreview(input, thumbId){
+  var thumb = $(thumbId);
+  if(!input.files||!input.files[0]){ thumb.style.display="none"; return; }
+  var reader = new FileReader();
+  reader.onload = function(e){ thumb.src=e.target.result; thumb.style.display=""; };
+  reader.readAsDataURL(input.files[0]);
+}
+
+function saveVReading(du, nozzle, product, rdgId, photoId, btn){
+  var rdg = parseFloat($(rdgId).value);
+  if(isNaN(rdg)||rdg<=0){ alert("Enter a valid reading."); return; }
+  var shift=$("vShift").value, type=$("vType").value, date=$("vDate").value;
+  var msgEl=$("vmsg_vnz_"+du+"_"+nozzle);
+  btn.disabled=true; btn.innerHTML='<span class="spin"></span> Saving…'; if(msgEl) msgEl.textContent="";
+
+  function doSave_(photoData){
+    call("saveSupReading",{
+      date:date, shift:shift, du:du, nozzle:nozzle, product:product,
+      type:type, reading:rdg, photoData:photoData||"", supervisor:S.name||""
+    }).then(function(res){
+      btn.disabled=false; btn.textContent="Save Reading";
+      if(res&&res.ok){
+        if(msgEl){ msgEl.style.color="var(--good)"; msgEl.textContent="✓ Saved at "+new Date().toLocaleTimeString(); }
+        loadVComparison();
+      } else {
+        if(msgEl){ msgEl.style.color="var(--bad)"; msgEl.textContent="Error: "+((res&&res.error)||"unknown"); }
+      }
+    }).catch(function(e){
+      btn.disabled=false; btn.textContent="Save Reading";
+      if(msgEl){ msgEl.style.color="var(--bad)"; msgEl.textContent="Network error."; }
+    });
+  }
+
+  var photoInput=$(photoId);
+  if(photoInput&&photoInput.files&&photoInput.files[0]){
+    var reader=new FileReader();
+    reader.onload=function(e){ doSave_(e.target.result); };
+    reader.readAsDataURL(photoInput.files[0]);
+  } else {
+    doSave_("");
+  }
+}
+
+function loadVComparison(){
+  var date=$("vDate").value||today();
+  $("vCompErr").textContent="";
+  $("vCompBody").innerHTML='<tr><td colspan="10" style="color:var(--muted)"><span class="spin"></span> Loading…</td></tr>';
+  call("getSupVsCA",{date:date}).then(function(res){
+    if(!res||!res.ok){ $("vCompErr").textContent=(res&&res.error)||"Failed."; $("vCompBody").innerHTML=""; return; }
+    var rows=res.rows||[];
+    if(!rows.length){ $("vCompBody").innerHTML='<tr><td colspan="10" style="color:var(--muted)">No readings recorded yet for this date.</td></tr>'; return; }
+    $("vCompBody").innerHTML=rows.map(function(r){
+      var matchHtml="—";
+      if(r.match===true)  matchHtml='<span style="color:var(--good);font-weight:700">✓ Match</span>';
+      if(r.match===false) matchHtml='<span style="color:var(--bad);font-weight:700">✗ Mismatch</span>';
+      var prCol={MS:"#F5A623",HS:"#1E3A8A",CNG:"#16A34A"}[r.product]||"#333";
+      return '<tr>'+
+        '<td>Du'+esc(r.du)+'</td>'+
+        '<td>N'+esc(r.nozzle)+'</td>'+
+        '<td><span style="color:'+prCol+';font-weight:700">'+esc(r.product)+'</span></td>'+
+        '<td>'+esc(r.type)+'</td>'+
+        '<td style="font-weight:700">'+(r.supReading!=null?num(r.supReading):'<span style="color:var(--faint)">—</span>')+'</td>'+
+        '<td style="font-size:12px;color:var(--muted)">'+esc(r.supTime||'')+'</td>'+
+        '<td style="font-weight:700">'+(r.caReading!=null?num(r.caReading):'<span style="color:var(--faint)">—</span>')+'</td>'+
+        '<td style="font-size:12px;color:var(--muted)">'+esc(r.caTime||'')+'</td>'+
+        '<td style="font-size:12px">'+esc(r.caName||'')+'</td>'+
+        '<td>'+matchHtml+'</td>'+
+      '</tr>';
+    }).join("");
+  }).catch(function(e){ $("vCompErr").textContent="Network error: "+(e&&e.message||e); $("vCompBody").innerHTML=""; });
+}
 </script>
 </body>
 </html>
