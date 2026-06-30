@@ -619,10 +619,9 @@ video.vprev{width:100%;max-width:380px;border-radius:var(--r-input);border:1px s
       <!-- Nozzle Test Video Recording -->
       <div class="panel" id="vVideoPanel" style="margin-bottom:16px">
         <h3 style="margin:0 0 6px;font-size:15px;font-weight:800">&#128249; Nozzle Test Video</h3>
-        <p style="color:var(--muted);font-size:13px;margin:0 0 14px">Record or upload video of officers conducting the nozzle test (pour-back). Video is saved on this device.</p>
+        <p style="color:var(--muted);font-size:13px;margin:0 0 14px">Record video of officers conducting the nozzle test (pour-back). Video is saved on this device.</p>
         <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px">
           <button class="btn vid-btn" id="vRecBtn" onclick="toggleNozzleVid(this)" style="background:var(--ink);color:#fff;border-color:var(--ink)">&#127909; Start Recording</button>
-          <label class="vid-btn">&#128193; Upload Video<input type="file" accept="video/*" style="display:none" id="vFileInput" onchange="vFilePreview(this)"></label>
           <span id="vRecStatus" style="font-size:13px;color:var(--muted)"></span>
         </div>
         <video id="vVidEl" class="vprev" style="display:none" playsinline muted></video>
