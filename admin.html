@@ -30,6 +30,7 @@ header.app .who{font-size:12px;display:flex;gap:10px;align-items:center;color:va
 header.app .who button{background:var(--field);border:1px solid var(--line);color:var(--ink);
   border-radius:var(--r-pill);padding:6px 12px;cursor:pointer;font-weight:600;font-size:12px}
 header.app .who button:hover{border-color:var(--ink)}
+.role-pill{display:inline-block;background:#1e2a3a;color:#fff;font-size:10px;font-weight:800;letter-spacing:.6px;padding:3px 9px;border-radius:20px;text-transform:uppercase;vertical-align:middle;}
 label{display:block;font-size:12px;color:var(--muted);margin:0 0 4px;font-weight:600;letter-spacing:.2px}
 input,select{width:100%;padding:11px 14px;border:1px solid var(--line);border-radius:var(--r-input);
   font-size:16px;background:var(--field);color:var(--ink);font-family:inherit;
@@ -490,7 +491,7 @@ function enterApp_(res){
   S.name=res.name||"";
   $("loginScreen").classList.add("hide");
   $("app").classList.remove("hide");
-  var w=$("who"); w.innerHTML='<span>'+S.name+'</span><button id="logoutBtn">Log out</button>';
+  var w=$("who"); w.innerHTML='<span>'+S.name+'</span><span class="role-pill">'+(res.role||'ADMIN').toUpperCase()+'</span><button id="logoutBtn">Log out</button>';
   $("logoutBtn").onclick=doLogout;
   boot();
   nav("dash");
