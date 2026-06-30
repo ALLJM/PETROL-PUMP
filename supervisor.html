@@ -725,6 +725,7 @@ function nav(which){
   $("dispView").classList.toggle("hide",which!=="disp");$("rateView").classList.toggle("hide",which!=="rate");$("repView").classList.toggle("hide",which!=="rep");$("dashView").classList.toggle("hide",which!=="dash");$("prodView").classList.toggle("hide",which!=="prod");$("verifyView").classList.toggle("hide",which!=="verify");
   var mainEl=document.querySelector(".main"); if(mainEl) mainEl.classList.toggle("wide", which==="dash");
   if(which==="dash") startDashAuto(); else stopDashAuto();
+  window.scrollTo(0,0);
 }
 $("navDisp").onclick=function(){nav("disp");renderDispensers();};
 $("navRate").onclick=function(){nav("rate");loadRates();};
@@ -1546,7 +1547,7 @@ function initVerify(){
   $("vDate").value = today();
   V_TYPE = 'Opening';
   selectVType('Opening', true);
-  buildVDuTiles();
+  setTimeout(function(){ buildVDuTiles(); }, 50);
   loadVComparison();
   $("vRefreshComp").onclick = loadVComparison;
 }
