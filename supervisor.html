@@ -279,6 +279,31 @@ a.ph{color:var(--accent);font-weight:700;text-decoration:none}
 .cal-day.sel{background:var(--accent);color:#fff;font-weight:700}
 .cal-day.other-month{color:var(--faint)}
 .cal-day:disabled{opacity:.3;cursor:not-allowed}
+/* verify readings redesign */
+.vtype-btn{border:1.5px solid var(--line);background:var(--surface);border-radius:var(--r-card);padding:16px 12px;cursor:pointer;text-align:center;transition:.15s;color:var(--ink);font-family:inherit;width:100%}
+.vtype-btn:hover{border-color:var(--ink)}
+.vtype-btn.sel{border-color:var(--accent);background:var(--accent-soft);color:var(--accent)}
+.vdu-tile{background:var(--surface);border:1.5px solid var(--line);border-radius:var(--r-card);padding:14px 10px;text-align:center;cursor:pointer;transition:.15s;font-family:inherit;width:100%}
+.vdu-tile:hover{border-color:var(--accent);transform:translateY(-1px)}
+.vdu-tile.sel{border-color:var(--accent);background:var(--accent-soft)}
+.vdt-num{font-size:22px;font-weight:800;color:var(--ink)}
+.vdt-type{font-size:10.5px;color:var(--muted);margin-top:3px;font-weight:600}
+.vdu-tile.sel .vdt-num,.vdu-tile.sel .vdt-type{color:var(--accent)}
+.vtest-btn{border:1.5px solid var(--line);background:var(--surface);color:var(--ink);border-radius:var(--r-pill);padding:7px 14px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;transition:.15s}
+.vtest-btn:hover{border-color:var(--ink)}
+.vtest-btn.sel{background:var(--ink);color:#fff;border-color:var(--ink)}
+.vcam-zone{border:2px dashed var(--line);border-radius:12px;padding:26px 16px;text-align:center;cursor:pointer;transition:.15s;background:var(--field);color:var(--muted)}
+.vcam-zone:hover,.vcam-zone:active{border-color:var(--accent);background:var(--accent-soft)}
+.vcam-zone.has-photo{border-color:var(--good);border-style:solid;background:var(--good-soft)}
+.vcard{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-card);box-shadow:var(--shadow);margin-bottom:14px;overflow:hidden}
+.vcard-head{display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid var(--line)}
+
+/* video recording */
+.vid-btn{display:inline-flex;align-items:center;gap:6px;background:var(--field);border:1.5px solid var(--line);border-radius:var(--r-input);padding:9px 14px;cursor:pointer;font-weight:600;font-size:13px;color:var(--ink);margin:0;transition:.15s}
+.vid-btn:hover{border-color:var(--ink)}
+.vid-btn.rec{background:var(--bad);color:#fff;border-color:var(--bad)}
+.vid-pulse{width:8px;height:8px;border-radius:50%;background:#fff;display:inline-block;animation:pulse 1s infinite}
+video.vprev{width:100%;max-width:380px;border-radius:var(--r-input);border:1px solid var(--line);background:#000;margin-top:8px}
 </style>
 </head>
 <body>
@@ -558,8 +583,10 @@ a.ph{color:var(--accent);font-weight:700;text-decoration:none}
 <!-- allocation modal -->
     <!-- VERIFY READINGS -->
     <section id="verifyView" class="hide">
-      <h2 class="t">Supervisor Verification Readings</h2>
-      <div style="color:var(--muted);font-size:13px;margin-bottom:14px">Take meter photos before the CA starts. Compare against CA readings to detect any discrepancy.</div>
+      <h2 class="t">Supervisor Meter Readings</h2>
+      <p style="color:var(--muted);font-size:13px;margin:0 0 14px">Record meter readings for all dispensers at shift start (Opening) and shift end (Closing). Detects discrepancies and tracks nozzle test volumes.</p>
+
+      <!-- Date & Shift -->
       <div class="toolbar" style="margin-bottom:16px">
         <div class="f"><label>Date</label><input type="date" id="vDate" style="font-size:15px"></div>
         <div class="f"><label>Shift</label>
@@ -569,22 +596,43 @@ a.ph{color:var(--accent);font-weight:700;text-decoration:none}
             <option value="S3">S3 — Night</option>
           </select>
         </div>
-        <div class="f"><label>Type</label>
-          <select id="vType" style="font-size:15px">
-            <option value="Opening">Opening Reading</option>
-            <option value="Closing">Closing Reading</option>
-          </select>
+      </div>
+
+      <!-- Opening / Closing toggle -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px">
+        <button class="vtype-btn sel" id="vtypeOpen" onclick="selectVType('Opening')">
+          <div style="font-size:20px;margin-bottom:4px">&#9728;</div>
+          <div style="font-weight:800;font-size:15px">Opening</div>
+          <div style="font-size:12px;opacity:.7;margin-top:3px">Start of shift — photograph meters now</div>
+        </button>
+        <button class="vtype-btn" id="vtypeClose" onclick="selectVType('Closing')">
+          <div style="font-size:20px;margin-bottom:4px">&#127769;</div>
+          <div style="font-weight:800;font-size:15px">Closing</div>
+          <div style="font-size:12px;opacity:.7;margin-top:3px">End of shift — photograph meters now</div>
+        </button>
+      </div>
+      <input type="hidden" id="vType" value="Opening">
+
+      <!-- 6 Dispenser tiles -->
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:18px" id="vDuTiles"></div>
+
+      <!-- Expanded nozzle cards -->
+      <div id="vNozzleCards" class="hide"></div>
+
+      <!-- Nozzle Test Video Recording -->
+      <div class="panel" id="vVideoPanel" style="margin-bottom:16px">
+        <h3 style="margin:0 0 6px;font-size:15px;font-weight:800">&#128249; Nozzle Test Video</h3>
+        <p style="color:var(--muted);font-size:13px;margin:0 0 14px">Record or upload video of officers conducting the nozzle test (pour-back). Video is saved on this device.</p>
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px">
+          <button class="btn vid-btn" id="vRecBtn" onclick="toggleNozzleVid(this)" style="background:var(--ink);color:#fff;border-color:var(--ink)">&#127909; Start Recording</button>
+          <label class="vid-btn">&#128193; Upload Video<input type="file" accept="video/*" style="display:none" id="vFileInput" onchange="vFilePreview(this)"></label>
+          <span id="vRecStatus" style="font-size:13px;color:var(--muted)"></span>
+        </div>
+        <video id="vVidEl" class="vprev" style="display:none" playsinline muted></video>
+        <div id="vVidActions" style="display:none;margin-top:10px;gap:10px;flex-wrap:wrap">
+          <button class="btn" onclick="downloadNozzleVid()" style="padding:10px 16px;font-size:13px">&#11015; Download Video</button>
         </div>
       </div>
-
-      <!-- Dispenser selector -->
-      <div style="margin-bottom:14px">
-        <label>Select Dispenser</label>
-        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px" id="vDuBtns"></div>
-      </div>
-
-      <!-- Nozzle entry cards -->
-      <div id="vNozzleCards" class="hide"></div>
 
       <!-- Comparison table -->
       <div class="panel" style="margin-top:16px">
@@ -1491,79 +1539,163 @@ function doLogout(){
    VERIFY READINGS  —  Supervisor meter photo + reading
    ====================================================== */
 var VERIFY_DU = null;
+var V_TYPE = 'Opening';
 
 function initVerify(){
   $("vDate").value = today();
-  buildVDuBtns();
+  V_TYPE = 'Opening';
+  selectVType('Opening', true);
+  buildVDuTiles();
   loadVComparison();
   $("vRefreshComp").onclick = loadVComparison;
 }
 
-function buildVDuBtns(){
-  var c = $("vDuBtns"); c.innerHTML = "";
-  for(var n=1;n<=6;n++){
-    (function(du){
-      var btn = document.createElement("button");
-      btn.textContent = "Du " + du + (du>=5?" (CNG)":" (MS/HSD)");
-      btn.style.cssText = "border:1.5px solid var(--line);background:var(--surface);color:var(--muted);border-radius:var(--r-pill);padding:8px 16px;font-weight:600;font-size:13px;cursor:pointer;transition:.15s";
-      btn.onclick = function(){
-        [].forEach.call($("vDuBtns").children, function(b){ b.style.background="var(--surface)";b.style.color="var(--muted)";b.style.borderColor="var(--line)"; });
-        btn.style.background="var(--ink)";btn.style.color="#fff";btn.style.borderColor="var(--ink)";
-        VERIFY_DU = du; renderVNozzles(du);
-      };
-      c.appendChild(btn);
-    })(n);
-  }
+function selectVType(type, silent){
+  V_TYPE = type;
+  $("vType").value = type;
+  $("vtypeOpen").classList.toggle("sel", type==="Opening");
+  $("vtypeClose").classList.toggle("sel", type==="Closing");
+  if(!silent && VERIFY_DU) renderVNozzles(VERIFY_DU);
+}
+
+function buildVDuTiles(){
+  var c = $("vDuTiles"); if(!c) return;
+  c.innerHTML = "";
+  [{du:1,label:"MS / HSD"},{du:2,label:"MS / HSD"},{du:3,label:"MS / HSD"},
+   {du:4,label:"MS / HSD"},{du:5,label:"CNG"},{du:6,label:"CNG"}
+  ].forEach(function(d){
+    var tile = document.createElement("button");
+    tile.className = "vdu-tile";
+    tile.innerHTML =
+      '<div class="vdt-num">'+d.du+'</div>'+
+      pumpSVG()+
+      '<div class="vdt-type">'+d.label+'</div>';
+    tile.onclick = function(){
+      [].forEach.call(c.children, function(t){ t.classList.remove("sel"); });
+      tile.classList.add("sel");
+      VERIFY_DU = d.du;
+      renderVNozzles(d.du);
+      setTimeout(function(){ var el=$("vNozzleCards"); if(el) el.scrollIntoView({behavior:"smooth",block:"start"}); },120);
+    };
+    c.appendChild(tile);
+  });
 }
 
 function renderVNozzles(du){
-  var shift = $("vShift").value, type = $("vType").value;
-  var nozzles = du>=5 ? [{nozzleNo:"1",product:"CNG"},{nozzleNo:"2",product:"CNG"}]
-                      : [{nozzleNo:"1",product:"MS"},{nozzleNo:"3",product:"HS"},
-                         {nozzleNo:"2",product:"MS"},{nozzleNo:"4",product:"HS"}];
+  var type = V_TYPE || "Opening";
+  var nozzles = du>=5
+    ? [{nozzleNo:"1",product:"CNG"},{nozzleNo:"2",product:"CNG"}]
+    : [{nozzleNo:"1",product:"MS"},{nozzleNo:"2",product:"MS"},
+       {nozzleNo:"3",product:"HS"},{nozzleNo:"4",product:"HS"}];
   var c = $("vNozzleCards"); c.innerHTML = ""; c.classList.remove("hide");
-  var prColors = {MS:"#F5A623",HS:"#1E3A8A",CNG:"#16A34A"};
+
+  var PR_NAMES = {MS:"Petrol",HS:"Diesel (HSD)",CNG:"CNG"};
+  var PR_COLORS = {MS:"#F5A623",HS:"#1E3A8A",CNG:"#16A34A"};
+
   nozzles.forEach(function(nz){
-    var card = document.createElement("div");
-    card.className = "panel";
-    card.style.marginBottom = "12px";
     var nid = "vnz_"+du+"_"+nz.nozzleNo;
-    var col = prColors[nz.product]||"#333";
+    var col = PR_COLORS[nz.product]||"#333";
+    var card = document.createElement("div");
+    card.className = "vcard";
     card.innerHTML =
-      '<div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">'+
-        '<span style="background:'+col+';color:#fff;border-radius:var(--r-pill);padding:4px 12px;font-size:12px;font-weight:700">Du'+du+' · N'+nz.nozzleNo+' · '+nz.product+'</span>'+
-        '<span style="font-size:12px;color:var(--muted)">'+type+' Reading</span>'+
+      /* header */
+      '<div class="vcard-head">'+
+        '<div style="width:38px;height:38px;border-radius:10px;background:var(--field);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;flex-shrink:0">'+
+          '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="'+col+'" stroke-width="2.2"><path d="M3 3h12v13a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M15 8l3 2v8a1 1 0 0 1-1 1h-2"/><line x1="3" y1="8" x2="15" y2="8"/></svg>'+
+        '</div>'+
+        '<div style="flex:1;min-width:0">'+
+          '<div style="font-weight:700;font-size:15px">'+PR_NAMES[nz.product]+'</div>'+
+          '<div style="font-size:12px;color:var(--muted)">Du '+du+' &middot; Nozzle '+nz.nozzleNo+'</div>'+
+        '</div>'+
+        '<button class="btn sec" style="padding:7px 14px;font-size:12px;white-space:nowrap" id="vscan_'+nid+'">Tap to scan</button>'+
       '</div>'+
-      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:end">'+
-        '<div>'+
-          '<label>Photo (optional)</label>'+
-          '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">'+
-            '<label style="display:inline-flex;align-items:center;gap:6px;background:var(--field);border:1.5px solid var(--line);border-radius:var(--r-input);padding:9px 14px;cursor:pointer;font-weight:600;font-size:13px;color:var(--ink);margin:0">'+
-              '📷 Take / Upload'+
-              '<input type="file" accept="image/*" capture="environment" style="display:none" id="vphoto_'+nid+'" onchange="vPhotoPreview(this,'vthumb_'+nid+'')">'+
-            '</label>'+
-            '<img id="vthumb_'+nid+'" style="display:none;height:48px;width:64px;object-fit:cover;border-radius:8px;border:1px solid var(--line)">'+
+      /* camera zone */
+      '<div style="padding:12px 14px 0">'+
+        '<div class="vcam-zone" id="vcam_'+nid+'">'+
+          '<div id="vcam_icon_'+nid+'" style="font-size:28px;margin-bottom:6px">&#128247;</div>'+
+          '<div id="vcam_lbl_'+nid+'" style="font-size:13px;font-weight:600">Tap to capture '+type+' reading</div>'+
+          '<input type="file" accept="image/*" capture="environment" id="vphoto_'+nid+'" style="display:none">'+
+          '<img id="vthumb_'+nid+'" style="display:none;max-width:100%;max-height:180px;border-radius:10px;margin-top:10px;border:1px solid var(--line)">'+
+        '</div>'+
+      '</div>'+
+      /* nozzle test */
+      '<div style="padding:12px 14px 0">'+
+        '<div style="background:var(--field);border:1px solid var(--line);border-radius:12px;padding:12px">'+
+          '<div style="font-size:12px;font-weight:700;margin-bottom:10px">&#127910; Nozzle Test &nbsp;<span style="color:var(--muted);font-weight:500">&mdash; volume taken at shift start</span></div>'+
+          '<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px" id="vtestBtns_'+nid+'">'+
+            '<button class="vtest-btn" onclick="setVTestVol(''+nid+'',5,this)">5 L</button>'+
+            '<button class="vtest-btn" onclick="setVTestVol(''+nid+'',7,this)">7 L</button>'+
+            '<button class="vtest-btn" onclick="setVTestVol(''+nid+'','other',this)">Other</button>'+
+            '<input type="number" step="0.01" id="vtestL_'+nid+'" placeholder="L" style="width:64px;padding:7px 10px;border:1px solid var(--line);border-radius:8px;font-size:13px;font-weight:700;display:none">'+
           '</div>'+
-        '</div>'+
-        '<div>'+
-          '<label>Meter Reading</label>'+
-          '<input type="number" step="0.01" id="vrdg_'+nid+'" placeholder="e.g. 250500.3" style="font-size:16px;font-weight:700">'+
+          '<label style="display:inline-flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;font-weight:600;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:7px 12px">'+
+            '&#128247; Nozzle photo'+
+            '<input type="file" accept="image/*" capture="environment" style="display:none" id="vnzphoto_'+nid+'" onchange="vNozzlePhotoPreview(this,'vnzmsg_'+nid+'')">'+
+          '</label>'+
+          ' <span id="vnzmsg_'+nid+'" style="font-size:12px;color:var(--good)"></span>'+
         '</div>'+
       '</div>'+
-      '<div style="margin-top:10px;display:flex;gap:10px;align-items:center">'+
-        '<button class="btn" style="padding:10px 20px;font-size:13px" onclick="saveVReading(''+du+'',''+nz.nozzleNo+'',''+nz.product+'','vrdg_'+nid+'','vphoto_'+nid+'',this)">Save Reading</button>'+
+      /* meter reading */
+      '<div style="padding:12px 14px 0">'+
+        '<label>Meter Reading</label>'+
+        '<input type="number" step="0.01" id="vrdg_'+nid+'" placeholder="e.g. 250500.3" style="font-size:18px;font-weight:700">'+
+      '</div>'+
+      /* save */
+      '<div style="padding:12px 14px 14px;display:flex;gap:10px;align-items:center">'+
+        '<button class="btn" style="flex:1;padding:13px" id="vsave_'+nid+'">Save Reading</button>'+
         '<span id="vmsg_'+nid+'" style="font-size:13px;color:var(--muted)"></span>'+
       '</div>';
+
     c.appendChild(card);
+
+    /* wire events after DOM insertion */
+    var photoInp = document.getElementById('vphoto_'+nid);
+    var camZone  = document.getElementById('vcam_'+nid);
+    var scanBtn  = document.getElementById('vscan_'+nid);
+    var saveBtn  = document.getElementById('vsave_'+nid);
+    var thumb    = document.getElementById('vthumb_'+nid);
+    var icon     = document.getElementById('vcam_icon_'+nid);
+    var lbl      = document.getElementById('vcam_lbl_'+nid);
+
+    function openCam(){ if(photoInp) photoInp.click(); }
+    if(camZone) camZone.addEventListener('click', openCam);
+    if(scanBtn) scanBtn.addEventListener('click', openCam);
+    if(photoInp) photoInp.addEventListener('change', function(){
+      if(!this.files||!this.files[0]) return;
+      var r=new FileReader(); var self=this;
+      r.onload=function(e){
+        if(thumb){ thumb.src=e.target.result; thumb.style.display=''; }
+        if(icon) icon.style.display='none';
+        if(lbl) lbl.textContent='Photo captured ✓';
+        if(camZone){ camZone.classList.add('has-photo'); }
+      };
+      r.readAsDataURL(this.files[0]);
+    });
+
+    (function(duX, nzX, prX, rdgId, phId, btn){
+      btn.addEventListener('click', function(){
+        saveVReading(duX, nzX, prX, rdgId, phId, btn);
+      });
+    })(String(du), nz.nozzleNo, nz.product, 'vrdg_'+nid, 'vphoto_'+nid, saveBtn);
   });
 }
 
 function vPhotoPreview(input, thumbId){
-  var thumb = $(thumbId);
-  if(!input.files||!input.files[0]){ thumb.style.display="none"; return; }
-  var reader = new FileReader();
-  reader.onload = function(e){ thumb.src=e.target.result; thumb.style.display=""; };
-  reader.readAsDataURL(input.files[0]);
+  var thumb=$(thumbId); if(!thumb) return;
+  if(!input.files||!input.files[0]){thumb.style.display="none";return;}
+  var r=new FileReader(); r.onload=function(e){thumb.src=e.target.result;thumb.style.display="";};
+  r.readAsDataURL(input.files[0]);
+}
+function vNozzlePhotoPreview(input, msgId){
+  if(!input.files||!input.files[0]) return;
+  var el=$(msgId); if(el) el.textContent='✓ Photo taken';
+}
+function setVTestVol(nid, vol, btn){
+  [].forEach.call(document.querySelectorAll('#vtestBtns_'+nid+' .vtest-btn'), function(b){ b.classList.remove("sel"); });
+  btn.classList.add("sel");
+  var inp=$('vtestL_'+nid);
+  if(vol==='other'){ if(inp){inp.style.display='';inp.focus();} }
+  else { if(inp){inp.style.display='none';inp.value=vol;} }
 }
 
 function saveVReading(du, nozzle, product, rdgId, photoId, btn){
@@ -1629,6 +1761,123 @@ function loadVComparison(){
     }).join("");
   }).catch(function(e){ $("vCompErr").textContent="Network error: "+(e&&e.message||e); $("vCompBody").innerHTML=""; });
 }
+
+/* ======================================================
+   VIDEO RECORDING — Nozzle Test (pour-back) + per-nozzle
+   ====================================================== */
+var NV_STREAM=null, NV_RECORDER=null, NV_CHUNKS=[], NV_BLOB=null, NV_RECORDING=false;
+
+function toggleNozzleVid(btn){
+  if(NV_RECORDING) stopNozzleVid(btn); else startNozzleVid(btn);
+}
+function startNozzleVid(btn){
+  if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){
+    $('vRecStatus').textContent='Camera not supported on this browser.';
+    $('vRecStatus').style.color='var(--bad)'; return;
+  }
+  navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'},audio:true})
+    .then(function(stream){
+      NV_STREAM=stream; NV_CHUNKS=[]; NV_RECORDING=true;
+      var vid=$('vVidEl');
+      vid.srcObject=stream; vid.muted=true; vid.style.display=''; vid.controls=false; vid.play();
+      $('vVidActions').style.display='none';
+      var mime=MediaRecorder.isTypeSupported('video/webm;codecs=vp8')?'video/webm;codecs=vp8':'';
+      try{ NV_RECORDER=new MediaRecorder(stream, mime?{mimeType:mime}:{}); }
+      catch(e){ NV_RECORDER=new MediaRecorder(stream); }
+      NV_RECORDER.ondataavailable=function(e){if(e.data&&e.data.size>0)NV_CHUNKS.push(e.data);};
+      NV_RECORDER.onstop=function(){
+        var type=NV_RECORDER.mimeType||'video/webm';
+        NV_BLOB=new Blob(NV_CHUNKS,{type:type});
+        var url=URL.createObjectURL(NV_BLOB);
+        var vid=$('vVidEl'); vid.srcObject=null; vid.src=url; vid.muted=false; vid.controls=true; vid.play();
+        $('vVidActions').style.display='flex';
+        $('vRecStatus').textContent='✓ '+(NV_BLOB.size/1048576).toFixed(1)+' MB — download to save.';
+        $('vRecStatus').style.color='var(--good)';
+      };
+      NV_RECORDER.start(500);
+      btn.innerHTML='<span class="vid-pulse"></span> Stop';
+      btn.style.background='var(--bad)'; btn.style.borderColor='var(--bad)'; btn.style.color='#fff';
+      $('vRecStatus').innerHTML='<span style="color:var(--bad);font-weight:700">🔴 Recording…</span>';
+    })
+    .catch(function(e){
+      $('vRecStatus').textContent='Camera denied: '+(e.message||'permission denied');
+      $('vRecStatus').style.color='var(--bad)';
+    });
+}
+function stopNozzleVid(btn){
+  NV_RECORDING=false;
+  if(NV_RECORDER&&NV_RECORDER.state!=='inactive') NV_RECORDER.stop();
+  if(NV_STREAM){NV_STREAM.getTracks().forEach(function(t){t.stop();});NV_STREAM=null;}
+  btn.innerHTML='🎥 Start Recording';
+  btn.style.background='var(--ink)'; btn.style.borderColor='var(--ink)'; btn.style.color='#fff';
+}
+function downloadNozzleVid(){
+  if(!NV_BLOB) return;
+  var ext=(NV_BLOB.type||'').indexOf('mp4')>=0?'mp4':'webm';
+  var a=document.createElement('a'); a.href=URL.createObjectURL(NV_BLOB);
+  a.download='nozzle_test_'+($('vDate').value||today())+'_'+Date.now()+'.'+ext; a.click();
+}
+function vFilePreview(input){
+  if(!input.files||!input.files[0]) return;
+  var url=URL.createObjectURL(input.files[0]);
+  var vid=$('vVidEl'); vid.srcObject=null; vid.src=url; vid.muted=false; vid.controls=true; vid.style.display=''; vid.play();
+  NV_BLOB=input.files[0];
+  $('vVidActions').style.display='flex';
+  $('vRecStatus').textContent=input.files[0].name+' loaded.'; $('vRecStatus').style.color='var(--muted)';
+}
+
+/* per-nozzle card video helpers */
+var CARD_VID_STATE={};  /* nid -> {stream,recorder,chunks,recording} */
+
+function toggleNozzleCardVid(nid, btn){
+  var s=CARD_VID_STATE[nid]||{};
+  if(s.recording) stopCardVid(nid, btn); else startCardVid(nid, btn);
+}
+function startCardVid(nid, btn){
+  if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){
+    alert('Camera not supported.'); return;
+  }
+  navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'},audio:true})
+    .then(function(stream){
+      var state={stream:stream,chunks:[],recording:true};
+      CARD_VID_STATE[nid]=state;
+      var prev=$('vvprev_'+nid);
+      prev.srcObject=stream; prev.muted=true; prev.style.display=''; prev.controls=false; prev.play();
+      var mime=MediaRecorder.isTypeSupported('video/webm;codecs=vp8')?'video/webm;codecs=vp8':'';
+      try{ state.recorder=new MediaRecorder(stream, mime?{mimeType:mime}:{}); }
+      catch(e){ state.recorder=new MediaRecorder(stream); }
+      state.recorder.ondataavailable=function(e){if(e.data&&e.data.size>0)state.chunks.push(e.data);};
+      state.recorder.onstop=function(){
+        var blob=new Blob(state.chunks,{type:state.recorder.mimeType||'video/webm'});
+        state.blob=blob;
+        var url=URL.createObjectURL(blob);
+        var prev=$('vvprev_'+nid); prev.srcObject=null; prev.src=url; prev.muted=false; prev.controls=true; prev.play();
+        /* add download link */
+        var dl=$('vvdl_'+nid);
+        if(!dl){dl=document.createElement('a');dl.id='vvdl_'+nid;dl.style.cssText='font-size:12px;color:var(--accent);font-weight:700;cursor:pointer;display:block;margin-top:4px';}
+        dl.textContent='⬇ Download video';
+        dl.onclick=function(){var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='reading_'+nid+'_'+Date.now()+'.webm';a.click();};
+        prev.parentNode.insertBefore(dl, prev.nextSibling);
+      };
+      state.recorder.start(500);
+      btn.innerHTML='<span class="vid-pulse" style="background:var(--bad)"></span> Stop';
+      btn.classList.add('rec');
+    })
+    .catch(function(e){ alert('Camera denied: '+(e.message||e)); });
+}
+function stopCardVid(nid, btn){
+  var state=CARD_VID_STATE[nid]||{};
+  state.recording=false;
+  if(state.recorder&&state.recorder.state!=='inactive') state.recorder.stop();
+  if(state.stream){state.stream.getTracks().forEach(function(t){t.stop();});state.stream=null;}
+  btn.innerHTML='● Rec'; btn.classList.remove('rec');
+}
+function vVidNozzlePreview(input, vidId){
+  if(!input.files||!input.files[0]) return;
+  var url=URL.createObjectURL(input.files[0]);
+  var vid=$(vidId); vid.srcObject=null; vid.src=url; vid.muted=false; vid.controls=true; vid.style.display=''; vid.play();
+}
+
 </script>
 </body>
 </html>
