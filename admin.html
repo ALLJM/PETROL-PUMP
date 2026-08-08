@@ -250,6 +250,7 @@ tbody tr:hover{background:var(--field)}
   <nav class="side">
     <a id="navDash" class="sel">Dashboard</a>
     <a id="navRep">Collection Report</a>
+    <a id="navPrice">Retail Sales Price</a>
     <a id="navLogs">Login Logs</a>
   </nav>
   <div class="main">
@@ -377,6 +378,22 @@ tbody tr:hover{background:var(--field)}
       <div id="repEmpty" style="color:var(--muted);font-size:14px">Pick a CSA above to see their readings.</div>
     </section>
 
+    <!-- RETAIL SALES PRICE -->
+    <section id="priceView" class="hide">
+      <h2 class="t">Retail Sales Price (₹ / litre)</h2>
+      <div class="panel" style="max-width:520px">
+        <p style="font-size:13px;color:var(--muted);margin:0 0 16px">Set the selling price for each fuel. Supervisors can view these prices but cannot change them.</p>
+        <div class="grid g3">
+          <div><label>MS — Petrol</label><input type="number" step="0.01" id="aRMS" placeholder="0.00"></div>
+          <div><label>HS — Diesel (HSD)</label><input type="number" step="0.01" id="aRHS" placeholder="0.00"></div>
+          <div><label>CNG</label><input type="number" step="0.01" id="aRCNG" placeholder="0.00"></div>
+        </div>
+        <div style="height:16px"></div>
+        <button class="btn" id="aSaveRates" style="width:auto;padding:12px 24px">&#128274; Save Retail Sales Price</button>
+        <span id="aRateMsg" class="ok" style="margin-left:12px;font-size:13px"></span>
+      </div>
+    </section>
+
     <!-- LOGS -->
     <section id="logsView" class="hide">
       <h2 class="t">Login &amp; Activity Logs</h2>
@@ -479,7 +496,7 @@ function doLogin(){
 
 /* ---- NAV ---- */
 function nav(which){
-  ["Dash","Rep","Logs"].forEach(function(n){
+  ["Dash","Rep","Price","Logs"].forEach(function(n){
     var a=$("nav"+n),v=$(n.toLowerCase()+"View");
     if(a) a.classList.toggle("sel",which===n.toLowerCase());
     if(v) v.classList.toggle("hide",which!==n.toLowerCase());
@@ -488,10 +505,37 @@ function nav(which){
   if(mainEl) mainEl.classList.toggle("wide",which==="dash");
   if(which==="dash") startDashAuto(); else stopDashAuto();
   if(which==="logs") loadAdminLogs();
+  if(which==="price") loadAdminRates();
 }
 $("navDash").onclick=function(){nav("dash");loadDashboard();};
 $("navRep").onclick=function(){nav("rep");renderCAList();};
+$("navPrice").onclick=function(){nav("price");};
 $("navLogs").onclick=function(){nav("logs");};
+
+/* ---- RETAIL SALES PRICE ---- */
+function loadAdminRates(){
+  $("aRateMsg").textContent="";
+  call("getRates",{}).then(function(res){
+    var r=(res&&res.rates)||{};
+    $("aRMS").value=r.MS||"";
+    $("aRHS").value=r.HS||"";
+    $("aRCNG").value=r.CNG||"";
+  }).catch(function(){$("aRateMsg").textContent="Failed to load prices.";});
+}
+$("aSaveRates").onclick=function(){
+  var b=$("aSaveRates");
+  var ms=parseFloat($("aRMS").value)||0, hs=parseFloat($("aRHS").value)||0, cng=parseFloat($("aRCNG").value)||0;
+  if(!ms&&!hs&&!cng){$("aRateMsg").style.color="var(--bad)";$("aRateMsg").textContent="Enter at least one price.";return;}
+  b.disabled=true;b.innerHTML='<span class="spin"></span> Saving…';$("aRateMsg").textContent="";
+  call("setRates",{MS:ms,HS:hs,CNG:cng}).then(function(res){
+    b.disabled=false;b.textContent="🔒 Save Retail Sales Price";
+    $("aRateMsg").style.color="var(--good)";
+    $("aRateMsg").textContent=res&&res.ok?"Saved ✓":"Failed — try again";
+  }).catch(function(e){
+    b.disabled=false;b.textContent="🔒 Save Retail Sales Price";
+    $("aRateMsg").style.color="var(--bad)";$("aRateMsg").textContent="Error: "+(e&&e.message?e.message:e);
+  });
+};
 
 /* ---- BOOT (after login) ---- */
 function boot(){

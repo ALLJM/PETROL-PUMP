@@ -348,7 +348,7 @@ video.vprev{width:100%;max-width:380px;border-radius:var(--r-input);border:1px s
     <a id="navVerify" class="sel">Verify Readings</a>
     <a id="navDisp">Dispensers &amp; Shifts</a>
     <a id="navProd">Products</a>
-    <a id="navRate">Fuel Rate</a>
+    <a id="navRate">Retail Sales Price</a>
     <a id="navRep">Collection Report</a>
     <a id="navDash">Dashboard</a>
   </nav>
@@ -371,19 +371,16 @@ video.vprev{width:100%;max-width:380px;border-radius:var(--r-input);border:1px s
       <div class="dispgrid" id="dispGrid"></div>
     </section>
 
-    <!-- RATES -->
+    <!-- RETAIL SALES PRICE (view-only for supervisor) -->
     <section id="rateView" class="hide">
-      <h2 class="t">Fuel Rate (₹ / litre)</h2>
+      <h2 class="t">Retail Sales Price (₹ / litre)</h2>
       <div class="panel">
+        <p class="hint" style="color:var(--muted);font-size:13px;margin-bottom:14px">These prices are set by the Admin. Supervisors can view but cannot edit them.</p>
         <div class="grid g3">
-          <div><label>MS (Petrol)</label><input type="number" step="0.01" id="rMS"></div>
-          <div><label>HS (Diesel / HSD)</label><input type="number" step="0.01" id="rHS"></div>
-          <div><label>CNG</label><input type="number" step="0.01" id="rCNG"></div>
+          <div><label>MS — Petrol</label><input type="number" step="0.01" id="rMS" readonly style="background:var(--field);font-weight:700;color:var(--ink)"></div>
+          <div><label>HS — Diesel (HSD)</label><input type="number" step="0.01" id="rHS" readonly style="background:var(--field);font-weight:700;color:var(--ink)"></div>
+          <div><label>CNG</label><input type="number" step="0.01" id="rCNG" readonly style="background:var(--field);font-weight:700;color:var(--ink)"></div>
         </div>
-        <div style="height:14px"></div>
-        <button class="btn" id="saveRates" style="width:auto">Set &amp; Lock Rates</button>
-        <span id="rateMsg" class="ok" style="margin-left:12px"></span>
-        <p class="hint" style="color:var(--muted);font-size:12px;margin-top:10px">These rates apply to every CSA's sales value. The CSA app never shows or changes rates.</p>
       </div>
     </section>
 
@@ -902,15 +899,8 @@ $("aSave").onclick=function(){
   }).catch(function(e){b.disabled=false;b.textContent="Save allocation";});
 };
 
-/* ---- RATES ---- */
+/* ---- RETAIL SALES PRICE (view-only for supervisor) ---- */
 function loadRates(){if(PREVIEW){$("rMS").value="106.00";$("rHS").value="95.00";$("rCNG").value="91.00";return;}call("getRates",{}).then(function(res){var r=(res&&res.rates)||{};$("rMS").value=r.MS||"";$("rHS").value=r.HS||"";$("rCNG").value=r.CNG||"";});}
-$("saveRates").onclick=function(){
-  if(PREVIEW){$("rateMsg").textContent="Preview — not saved";return;}
-  var b=$("saveRates");b.disabled=true;b.innerHTML='<span class="spin"></span> Saving…';$("rateMsg").textContent="";
-  call("setRates",{MS:parseFloat($("rMS").value)||0,HS:parseFloat($("rHS").value)||0,CNG:parseFloat($("rCNG").value)||0}).then(function(res){
-    b.disabled=false;b.textContent="🔒 Set & Lock Rates";$("rateMsg").textContent=res&&res.ok?"Saved & locked ✓":"Failed";
-  }).catch(function(e){b.disabled=false;b.textContent="🔒 Set & Lock Rates";$("rateMsg").textContent="Error";});
-};
 
 /* ---- DASHBOARD (live from the sheet · any date range · auto-refresh) ---- */
 var DASH_TIMER=null, CUR_PRESET="today";
