@@ -185,12 +185,18 @@ input[readonly]{background:var(--field);font-weight:700;color:var(--ink)}
 *::-webkit-scrollbar-thumb{background:var(--line);border-radius:8px}
 *::-webkit-scrollbar-track{background:transparent}
 .role-pill{display:inline-block;background:#1e2a3a;color:#fff;font-size:10px;font-weight:800;letter-spacing:.6px;padding:3px 9px;border-radius:20px;text-transform:uppercase;vertical-align:middle;}
+/* ── Language toggle ── */
+.lang-toggle{display:flex;border:1px solid var(--line);border-radius:var(--r-pill);overflow:hidden;background:var(--field);flex-shrink:0}
+.lt-btn{border:none;background:transparent;padding:5px 11px;font-size:11.5px;font-weight:700;cursor:pointer;color:var(--muted);font-family:inherit;transition:.15s;line-height:1}
+.lt-btn.active{background:var(--ink);color:#fff}
+
 </style>
 </head>
 <body>
 <header class="app">
   <div><div class="nm">Retail Outlet — Daily Report</div><div class="sub">Customer Attendant</div></div>
-  <div style="display:flex;align-items:center;gap:10px">
+  <div style="display:flex;align-items:center;gap:8px">
+    <div class="lang-toggle"><button class="lt-btn active" id="ltEn" onclick="setLang('en')">EN</button><button class="lt-btn" id="ltHi" onclick="setLang('hi')">हिं</button></div>
     <div class="bell-wrap" id="bellWrap" style="display:none">
       <button id="notifBtn" title="Notifications">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
@@ -317,6 +323,158 @@ input[readonly]{background:var(--field);font-weight:700;color:var(--ink)}
 <div class="modal" id="modal"><div class="box"><h3 id="mTitle">Done</h3><div class="c" id="mBody"></div><div class="a"><button id="mOk">OK</button></div></div></div>
 
 <script>
+
+/* ========== i18n ========== */
+var LANG=(function(){try{return localStorage.getItem('csaLang')||'en';}catch(e){return 'en';}}());
+var I18N={
+en:{
+  appName:'Retail Outlet — Daily Report',appSub:'Customer Attendant',
+  welcomeBack:'Welcome back',signIn:'Sign in',
+  lblUsername:'Username',lblPassword:'Password',
+  loginBtn:'Log in',loginChecking:'Checking…',
+  errEnterCreds:'Enter username and password.',
+  errWrongApp:'This is the CSA app. Supervisor accounts cannot log in here.',
+  errLoginFailed:'Login failed',errNetwork:'Network error: ',
+  shiftTitle:'Your Shift (set by supervisor)',
+  lblDate:'Date',lblShift:'Shift',lblDU:'Dispensing Unit',lblLeader:'Shift Leader',lblCSAName:'CSA Name',lblNozzles:'Your Nozzles',
+  modeTitle:'What are you doing now?',
+  modeOpenTitle:'Opening',modeOpenDesc:'Morning — photograph opening meters',
+  modeCloseTitle:'Closing',modeCloseDesc:'Evening — photograph closing meters',
+  openCardTitle:'Opening Readings',closeCardTitle:'Closing Readings',
+  loadOpen:'Load my opening readings',
+  verifyTitle:'Verification',verifyHint:'Confirm your closing readings are correct.',
+  vYesTitle:'✓ Verified',vYesDesc:'Readings are correct',
+  vNoTitle:'✗ Not verified',vNoDesc:'Hold & review',
+  vTapConfirm:'Tap a button to confirm.',
+  vDoneYes:'Verified ✓ — ready to submit.',vDoneNo:'Marked Not verified.',
+  submitOpen:'Save Opening (draft)',submitClose:'Submit Closing',
+  submitting:'Submitting…',saving:'Saving…',
+  notifBack:'← Back',notifTitle:'Interim Verifications',noPending:'No pending verifications.',
+  scanTap:'Tap to scan',scanOpenLbl:'Tap to capture opening reading',scanCloseLbl:'Tap to capture closing reading',
+  retake:'Retake',openCaptured:'✓ Opening captured',
+  scanPrompt:'📷 Tap Scan — line up the V reading in the orange box.',
+  reading:'⏳ Reading…',readingMeter:'⏳ Reading meter…',
+  cantRead:"Couldn't read — retake with the V line filling the box.",
+  cantReadTap:"Couldn't read — tap to retry",
+  cancelled:'Cancelled — tap Scan to retry.',openingCam:'📷 Opening camera…',
+  cropHint:'Drag the orange box onto the <b>V</b> (litre) line · drag the corner to resize',
+  cropCancel:'Cancel',cropFull:'Whole photo',cropRead:'Read this',
+  liveCamHint:'Place the <b>V</b> (litre) reading inside the orange box, then tap <b>Capture</b>',
+  liveHint:'Hold steady · fill the box with the V line',
+  liveCancel:'Cancel',liveSwitch:'Flip cam',liveCapture:'Capture',
+  noShift:'No shift assigned to you for today ({date}). Ask your supervisor to allocate you to a dispenser.',
+  loadingOpen:'Loading your opening readings…',
+  loadedNozzles:'Loaded {n} nozzle(s). Photograph each CLOSING meter.',
+  noOpenFound:'No opening readings found for today. Did you save your OPENING this morning?',
+  errPhoto:'Photograph at least one opening meter first.',errLoadFirst:'Load your opening readings first.',
+  errPhotoAll:'Photograph every closing meter.',
+  errClosingLess:'A closing is less than its opening — retake that photo.',
+  errVerifyFirst:'Tap Verified / Not verified first.',
+  logOut:'Log out',restoring:'Restoring session…'
+},
+hi:{
+  appName:'रिटेल आउटलेट — दैनिक रिपोर्ट',appSub:'ग्राहक सेवक',
+  welcomeBack:'वापस आपका स्वागत है',signIn:'लॉग इन करें',
+  lblUsername:'यूजरनेम',lblPassword:'पासवर्ड',
+  loginBtn:'लॉग इन',loginChecking:'जाँच हो रही है…',
+  errEnterCreds:'यूजरनेम और पासवर्ड दर्ज करें।',
+  errWrongApp:'यह CSA एप है। सुपरवाइज़र यहाँ लॉग इन नहीं कर सकते।',
+  errLoginFailed:'लॉगइन विफल',errNetwork:'नेटवर्क त्रुटि: ',
+  shiftTitle:'आपकी शिफ़्ट (सुपरवाइज़र द्वारा)',
+  lblDate:'दिनांक',lblShift:'शिफ़्ट',lblDU:'डिस्पेंसिंग यूनिट',lblLeader:'शिफ़्ट लीडर',lblCSAName:'CSA का नाम',lblNozzles:'आपकी नोज़ल',
+  modeTitle:'अभी क्या कर रहे हैं?',
+  modeOpenTitle:'ओपनिंग',modeOpenDesc:'सुबह — मीटर खुलने की फोटो',
+  modeCloseTitle:'क्लोजिंग',modeCloseDesc:'शाम — मीटर बंद होने की फोटो',
+  openCardTitle:'शुरुआती रीडिंग',closeCardTitle:'समाप्ति रीडिंग',
+  loadOpen:'मेरी ओपनिंग रीडिंग लोड करें',
+  verifyTitle:'सत्यापन',verifyHint:'पुष्टि करें कि आपकी क्लोजिंग रीडिंग सही हैं।',
+  vYesTitle:'✓ सत्यापित',vYesDesc:'रीडिंग सही है',
+  vNoTitle:'✗ सत्यापित नहीं',vNoDesc:'रोकें और जाँचें',
+  vTapConfirm:'पुष्टि के लिए बटन दबाएं।',
+  vDoneYes:'सत्यापित ✓ — सबमिट के लिए तैयार।',vDoneNo:'सत्यापित नहीं किया गया।',
+  submitOpen:'ओपनिंग सेव करें (ड्राफ्ट)',submitClose:'क्लोजिंग सबमिट करें',
+  submitting:'सबमिट हो रहा है…',saving:'सेव हो रहा है…',
+  notifBack:'← वापस',notifTitle:'अंतरिम सत्यापन',noPending:'कोई लंबित सत्यापन नहीं।',
+  scanTap:'स्कैन करें',scanOpenLbl:'ओपनिंग रीडिंग कैपचर करें',scanCloseLbl:'क्लोजिंग रीडिंग कैपचर करें',
+  retake:'दोबारा',openCaptured:'✓ ओपनिंग कैपचर',
+  scanPrompt:'📷 स्कैन करें — V रीडिंग को नारंगी बॉक्स में रखें।',
+  reading:'⏳ पढ़ रहे हैं…',readingMeter:'⏳ मीटर पढ़ रहे हैं…',
+  cantRead:'पढ़ नहीं सका — V लाइन से बॉक्स भरकर दोबारा लें।',
+  cantReadTap:'पढ़ नहीं सका — दोबारा टैप करें',
+  cancelled:'रद्द — स्कैन दोबारा टैप करें।',openingCam:'📷 कैमरा खुल रहा है…',
+  cropHint:'नारंगी बॉक्स को <b>V</b> (लीटर) लाइन पर खींचें · कोने से आकार बदलें',
+  cropCancel:'रद्द करें',cropFull:'पूरी फोटो',cropRead:'यह पढ़ें',
+  liveCamHint:'<b>V</b> (लीटर) रीडिंग को नारंगी बॉक्स में रखें, फिर <b>कैपचर</b> दबाएं',
+  liveHint:'स्थिर रखें · V लाइन से बॉक्स भरें',
+  liveCancel:'रद्द करें',liveSwitch:'कैमरा पलटें',liveCapture:'कैपचर',
+  noShift:'आज आपको कोई शिफ़्ट नहीं दी गई ({date})। अपने सुपरवाइज़र से डिस्पेंसर आवंटित कराएं।',
+  loadingOpen:'आपकी ओपनिंग रीडिंग लोड हो रही हैं…',
+  loadedNozzles:'{n} नोज़ल लोड हुई। हर क्लोजिंग मीटर की फोटो लें।',
+  noOpenFound:'आज की ओपनिंग रीडिंग नहीं मिली। क्या आपने सुबह ओपनिंग सेव की थी?',
+  errPhoto:'पहले कम से कम एक ओपनिंग मीटर की फोटो लें।',errLoadFirst:'पहले अपनी ओपनिंग रीडिंग लोड करें।',
+  errPhotoAll:'हर क्लोजिंग मीटर की फोटो लें।',
+  errClosingLess:'एक क्लोजिंग ओपनिंग से कम है — वह फोटो दोबारा लें।',
+  errVerifyFirst:'पहले सत्यापित / सत्यापित नहीं दबाएं।',
+  logOut:'लॉग आउट',restoring:'सेशन पुनःस्थापित हो रहा है…'
+}};
+function t(k){return(I18N[LANG]&&I18N[LANG][k])||I18N.en[k]||k;}
+function setLang(lang){
+  LANG=lang;try{localStorage.setItem('csaLang',lang);}catch(e){}
+  var en=$('ltEn'),hi=$('ltHi');
+  if(en){en.classList.toggle('active',lang==='en');}
+  if(hi){hi.classList.toggle('active',lang==='hi');}
+  applyLang();
+}
+function applyLang(){
+  var nm=document.querySelector('.nm');if(nm)nm.textContent=t('appName');
+  var sb2=document.querySelector('header.app .sub');if(sb2)sb2.textContent=t('appSub');
+  var ey=document.querySelector('.login-eyebrow');if(ey)ey.textContent=t('welcomeBack');
+  var h1=document.querySelector('.loginbox h1');if(h1)h1.textContent=t('signIn');
+  var llabs=document.querySelectorAll('.loginbox .body label');
+  if(llabs[0])llabs[0].textContent=t('lblUsername');
+  if(llabs[1])llabs[1].textContent=t('lblPassword');
+  var lb=$('loginBtn');if(lb&&!lb.disabled)lb.textContent=t('loginBtn');
+  var sc=$('shiftCard');if(sc){
+    var sh=sc.querySelector('h2');if(sh)sh.innerHTML='<span class="n">1</span> '+t('shiftTitle');
+    var slabs=sc.querySelectorAll('label');
+    var lmap=['lblDate','lblShift','lblDU','lblLeader','lblCSAName','lblNozzles'];
+    lmap.forEach(function(k,i){if(slabs[i])slabs[i].textContent=t(k);});
+  }
+  var mc=$('modeCard');if(mc){
+    var mh=mc.querySelector('h2');if(mh)mh.innerHTML='<span class="n">2</span> '+t('modeTitle');
+    var ob=$('mOpen');if(ob){ob.querySelector('b').textContent=t('modeOpenTitle');ob.querySelector('span').textContent=t('modeOpenDesc');}
+    var cl=$('mClose');if(cl){cl.querySelector('b').textContent=t('modeCloseTitle');cl.querySelector('span').textContent=t('modeCloseDesc');}
+  }
+  var oc=$('openCard');if(oc){var oh=oc.querySelector('h2');if(oh)oh.innerHTML='<span class="n">3</span> '+t('openCardTitle');}
+  var cc=$('closeCard');if(cc){
+    var ch=cc.querySelector('h2');if(ch)ch.innerHTML='<span class="n">3</span> '+t('closeCardTitle');
+    var lo=$('loadOpen');if(lo)lo.innerHTML='<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:6px"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>'+t('loadOpen');
+  }
+  var vc=$('verifyCard');if(vc){
+    var vh=vc.querySelector('h2');if(vh)vh.innerHTML='<span class="n">4</span> '+t('verifyTitle');
+    var vp=vc.querySelector('p.hint');if(vp)vp.textContent=t('verifyHint');
+    var vy=$('vYes');if(vy){vy.querySelector('b').innerHTML=t('vYesTitle');vy.querySelector('span').textContent=t('vYesDesc');}
+    var vn=$('vNo');if(vn){vn.querySelector('b').innerHTML=t('vNoTitle');vn.querySelector('span').textContent=t('vNoDesc');}
+    var vhint=$('vHint');
+    if(vhint){var cur=vhint.textContent;if(cur===I18N.en.vTapConfirm||cur===I18N.hi.vTapConfirm)vhint.textContent=t('vTapConfirm');}
+  }
+  var sbtn=$('submitBtn');if(sbtn&&!sbtn.disabled){if(MODE==='open')sbtn.textContent=t('submitOpen');else if(MODE==='close')sbtn.textContent=t('submitClose');}
+  var nb=$('notifBack');if(nb)nb.textContent=t('notifBack');
+  var nt=document.querySelector('#notifPage h2');if(nt)nt.textContent=t('notifTitle');
+  document.querySelector('.crophead').innerHTML=t('cropHint');
+  $('cropCancel').textContent=t('cropCancel');$('cropFull').textContent=t('cropFull');$('cropRead').textContent=t('cropRead');
+  document.querySelector('.livehead').innerHTML=t('liveCamHint');
+  document.querySelector('.livehint').textContent=t('liveHint');
+  $('liveCancel').textContent=t('liveCancel');$('liveSwitch').textContent=t('liveSwitch');$('liveCapture').textContent=t('liveCapture');
+}
+/* init lang on load */
+(function(){
+  try{var l=localStorage.getItem('csaLang');if(l){LANG=l;}}catch(e){}
+  var en=$('ltEn'),hi=$('ltHi');
+  if(en)en.classList.toggle('active',LANG==='en');
+  if(hi)hi.classList.toggle('active',LANG==='hi');
+  if(LANG!=='en')applyLang();
+}());
 var WEB_APP_URL="https://script.google.com/macros/s/AKfycbxtlsiv4upVm05ovhOA2Uzoc5ctnDG7SuQij91AkBLj7x3aiz-Z74zdTtcq902b1Vsm/exec";
 var OCR_SPACE_KEY="K84802403888957";
 function $(id){return document.getElementById(id);}
@@ -444,10 +602,10 @@ function attachScan(div,which){
   var fileIn=div.querySelector(".scaninput"),msg=div.querySelector("[data-scanmsg]"),btn=div.querySelector(".scanbtn");
   var szl=div.querySelector('.tile-scanlbl');
   var szlDefault=szl?szl.textContent:'';
-  msg.textContent="📷 Tap Scan — line up the V reading in the orange box.";
+  msg.textContent=t('scanPrompt');
   function finish(dataUrl,rect){
-    msg.className="scanmsg busy";msg.textContent="⏳ Reading…";
-    if(szl){szl.textContent="⏳ Reading meter…";}
+    msg.className="scanmsg busy";msg.textContent=t('reading');
+    if(szl){szl.textContent=t('readingMeter');}
     MeterOCR.readV(dataUrl,rect,OCR_SPACE_KEY).then(function(v){
       if(v){
         div.querySelector('[data-f="'+which+'"]').value=v;recalc(div);
@@ -455,8 +613,8 @@ function attachScan(div,which){
         try{div.dispatchEvent(new CustomEvent('tileval',{detail:{which:which,value:v}}));}catch(e){}
       }
       else{
-        msg.className="scanmsg errr";msg.textContent="Couldn't read — retake with the V line filling the box.";
-        if(szl){szl.textContent="Couldn't read — tap to retry";}
+        msg.className="scanmsg errr";msg.textContent=t('cantRead');
+        if(szl){szl.textContent=t('cantReadTap');}
         var sz=div.querySelector('.tile-scanzone');if(sz)sz.classList.remove('scanning');
       }
       stampTimestamp(dataUrl).then(function(st){call("savePhoto",{info:{dataUrl:st,which:which,caName:S.caName,date:S.date,du:S.du,nozzleNo:div.dataset.noz,product:div.dataset.prod}}).then(function(res){if(res&&res.photoUrl)div.dataset[which+"Photo"]=res.photoUrl;}).catch(function(){});});
@@ -474,7 +632,7 @@ function attachScan(div,which){
     };r.readAsDataURL(f);});
   btn.addEventListener("click",function(){
     if(btn.disabled)return;
-    btn.disabled=true; msg.className="scanmsg busy"; msg.textContent="📷 Opening camera…"; if(szl){szl.textContent="📷 Opening camera…";} var sz=div.querySelector('.tile-scanzone');if(sz)sz.classList.add('scanning');
+    btn.disabled=true; msg.className="scanmsg busy"; msg.textContent=t('openingCam'); if(szl){szl.textContent=t('openingCam');} var sz=div.querySelector('.tile-scanzone');if(sz)sz.classList.add('scanning');
     liveCapture(which).then(function(res){
       if(res===null){ btn.disabled=false; msg.className="scanmsg"; msg.textContent="Cancelled — tap Scan to retry."; if(szl){szl.textContent=szlDefault;} var sz=div.querySelector('.tile-scanzone');if(sz)sz.classList.remove('scanning'); return; }
       if(res.unsupported){ btn.disabled=false; fileFallback(); return; }
@@ -505,15 +663,15 @@ function disarmExitGuard(){ EXIT_GUARD=false; window.removeEventListener("popsta
 $("loginBtn").addEventListener("click",doLogin);
 $("p").addEventListener("keydown",function(e){if(e.key==="Enter")doLogin();});
 function doLogin(){
-  var u=$("u").value.trim(),p=$("p").value;if(!u||!p){$("loginErr").textContent="Enter username and password.";return;}
+  var u=$("u").value.trim(),p=$("p").value;if(!u||!p){$("loginErr").textContent=t('errEnterCreds');return;}
   var btn=$("loginBtn");btn.disabled=true;btn.innerHTML='<span class="spin"></span> Checking…';$("loginErr").textContent="";
   call("login",{username:u,password:p}).then(function(res){
-    btn.disabled=false;btn.textContent="Log in";
-    if(!res||!res.ok){$("loginErr").textContent=(res&&res.error)||"Login failed";return;}
-    if(String(res.role).toUpperCase()!=="CA"){$("loginErr").textContent="This is the CA app. Supervisor accounts cannot log in here.";return;}
+    btn.disabled=false;btn.textContent=t('loginBtn');
+    if(!res||!res.ok){$("loginErr").textContent=(res&&res.error)||t('errLoginFailed');return;}
+    if(String(res.role).toUpperCase()!=="CA"){$("loginErr").textContent=t('errWrongApp');return;}
     sessionSave_(u,p,res);
     enterApp_(res);
-  }).catch(function(e){btn.disabled=false;btn.textContent="Log in";$("loginErr").textContent="Network error: "+(e&&e.message?e.message:e);});
+  }).catch(function(e){btn.disabled=false;btn.textContent=t('loginBtn');$("loginErr").textContent=t('errNetwork')+(e&&e.message?e.message:e);});
 }
 
 /* ---------- allocation ---------- */
@@ -547,11 +705,11 @@ function openNozzleCard(nz){
     '<div class="tile-hdr">'+
       '<div class="tile-badge ft-'+cls+'">'+ico+'<span class="fuel-dot"></span></div>'+
       '<div class="tile-info"><div class="tile-fname">'+pn+'</div><div class="tile-fmeta">Dispenser '+S.du+' · Nozzle '+noNo+'</div></div>'+
-      '<div class="tile-sbadge" data-tbadge>Tap to scan</div>'+
+      '<div class="tile-sbadge" data-tbadge>'+t('scanTap')+'</div>'+
     '</div>'+
     '<div class="tile-scanzone">'+
       '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="color:var(--muted)"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>'+
-      '<div class="tile-scanlbl">Tap to capture opening reading</div>'+
+      '<div class="tile-scanlbl">'+t('scanOpenLbl')+'</div>'+
     '</div>'+
     '<div class="tile-valzone">'+
       '<div><div class="tile-rval" data-reading></div><div class="tile-rok">✓ Opening captured</div></div>'+
@@ -570,9 +728,9 @@ function openNozzleCard(nz){
     d.querySelector('.tile-valzone').style.display='none';
     d.querySelector('[data-reading]').textContent='';
     d.querySelector('[data-f="opening"]').value='';
-    d.querySelector('[data-tbadge]').textContent='Tap to scan';
+    d.querySelector('[data-tbadge]').textContent=t('scanTap');
     d.querySelector('[data-tbadge]').className='tile-sbadge';
-    d.querySelector('.tile-scanlbl').textContent='Tap to capture opening reading';
+    d.querySelector('.tile-scanlbl').textContent=t('scanOpenLbl');
     d.querySelector('.tile-scanzone').classList.remove('scanning');
   });
   d.addEventListener('tileval',function(e){
@@ -604,12 +762,12 @@ function closeNozzleCard(n){
     '<div class="tile-hdr">'+
       '<div class="tile-badge ft-'+cls+'">'+ico+'<span class="fuel-dot"></span></div>'+
       '<div class="tile-info"><div class="tile-fname">'+pn+'</div><div class="tile-fmeta">Dispenser '+S.du+' · Nozzle '+noNo+'</div></div>'+
-      '<div class="tile-sbadge" data-tbadge>Tap to scan</div>'+
+      '<div class="tile-sbadge" data-tbadge>'+t('scanTap')+'</div>'+
     '</div>'+
     '<div class="tile-open-ref"><span class="ref-label">Opening</span><span class="ref-val">'+num(n.opening)+'</span></div>'+
     '<div class="tile-scanzone">'+
       '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="color:var(--muted)"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>'+
-      '<div class="tile-scanlbl">Tap to capture closing reading</div>'+
+      '<div class="tile-scanlbl">'+t('scanCloseLbl')+'</div>'+
     '</div>'+
     '<div class="tile-valzone">'+
       '<div class="tile-close-readings">'+
@@ -633,9 +791,9 @@ function closeNozzleCard(n){
     d.querySelector('.tile-scanzone').style.display='';
     d.querySelector('.tile-valzone').style.display='none';
     d.querySelector('[data-f="closing"]').value='';
-    d.querySelector('[data-tbadge]').textContent='Tap to scan';
+    d.querySelector('[data-tbadge]').textContent=t('scanTap');
     d.querySelector('[data-tbadge]').className='tile-sbadge';
-    d.querySelector('.tile-scanlbl').textContent='Tap to capture closing reading';
+    d.querySelector('.tile-scanlbl').textContent=t('scanCloseLbl');
     d.querySelector('.tile-scanzone').classList.remove('scanning');
     d.querySelector('[data-o="vol"]').textContent='0.00';
     d.querySelector('[data-e]').textContent='';
@@ -654,20 +812,20 @@ function closeNozzleCard(n){
 function loadOpenings(){
   $("closeNozzles").innerHTML="";
   if(PREVIEW){ [{key:"d1",nozzleNo:"1",product:"MS",opening:75674.090},{key:"d2",nozzleNo:"1",product:"HS",opening:60123.450}].forEach(function(n){closeNozzleCard(n);}); $("closeMsg").textContent="Preview — demo opening readings."; return; }
-  $("closeMsg").textContent="Loading your opening readings…";
+  $("closeMsg").textContent=t('loadingOpen');
   call("getOpen",{query:{date:S.date,du:S.du,shift:S.shift}}).then(function(res){
     if(res&&res.ok&&res.nozzles&&res.nozzles.length){
       res.nozzles.sort(function(a,b){var rk=function(p){return p==="MS"?0:(p==="HS"?1:(p==="CNG"?2:3));};return rk(a.product)-rk(b.product)||(Number(a.nozzleNo)-Number(b.nozzleNo));});
       res.nozzles.forEach(function(n){closeNozzleCard(n);});
-      $("closeMsg").textContent="Loaded "+res.nozzles.length+" nozzle(s). Photograph each CLOSING meter.";
-    }else if(res&&res.ok){$("closeMsg").textContent="No opening readings found for today. Did you save your OPENING this morning?";}
+      $("closeMsg").textContent=t('loadedNozzles').replace('{n}',res.nozzles.length);
+    }else if(res&&res.ok){$("closeMsg").textContent=t('noOpenFound');}
     else{$("closeMsg").textContent="Could not load: "+((res&&res.error)||"unknown");}
   }).catch(function(e){$("closeMsg").textContent="Could not load: "+(e&&e.message?e.message:e);});
 }
 
 /* ---------- verification ---------- */
-$("vYes").addEventListener("click",function(){verifyState="Verified";$("vYes").classList.add("sel");$("vNo").classList.remove("sel");$("vHint").textContent="Verified ✓ — ready to submit.";});
-$("vNo").addEventListener("click",function(){verifyState="Not verified";$("vNo").classList.add("sel");$("vYes").classList.remove("sel");$("vHint").textContent="Marked Not verified.";});
+$("vYes").addEventListener("click",function(){verifyState="Verified";$("vYes").classList.add("sel");$("vNo").classList.remove("sel");$("vHint").textContent=t('vDoneYes');});
+$("vNo").addEventListener("click",function(){verifyState="Not verified";$("vNo").classList.add("sel");$("vYes").classList.remove("sel");$("vHint").textContent=t('vDoneNo');});
 
 /* ---------- mode + submit ---------- */
 $("mOpen").addEventListener("click",function(){setMode("open");});
@@ -676,7 +834,7 @@ function setMode(m){MODE=m;
   $("mOpen").classList.toggle("sel",m==="open");$("mClose").classList.toggle("sel",m==="close");
   $("openCard").classList.toggle("hide",m!=="open");
   $("closeCard").classList.toggle("hide",m!=="close");$("verifyCard").classList.toggle("hide",m!=="close");
-  $("submitbar").classList.add("show");$("submitBtn").textContent=(m==="open")?"Save Opening (draft)":"Submit Closing";
+  $("submitbar").classList.add("show");$("submitBtn").textContent=(m==="open")?t('submitOpen'):t('submitClose');
   $("formErr").textContent="";
   if(m==="open"){ buildOpening(); } else { loadOpenings(); }   /* closing auto-fetches the opening draft */
   var target=(m==="open")?$("openCard"):$("closeCard");
@@ -691,33 +849,33 @@ function saveOpening(){
     var op=d.querySelector('[data-f="opening"]').value;
     if(op!=="")nozzles.push({nozzleNo:d.dataset.noz,product:d.dataset.prod,opening:parseFloat(op),openingPhoto:d.dataset.openingPhoto||""});
   });
-  if(nozzles.length===0){$("formErr").textContent="Photograph at least one opening meter first.";return;}
+  if(nozzles.length===0){$("formErr").textContent=t('errPhoto');return;}
   var payload={meta:{date:S.date,du:S.du,shift:S.shift,caName:S.caName,shiftLeader:S.leader},nozzles:nozzles};
-  var btn=$("submitBtn");btn.disabled=true;btn.innerHTML='<span class="spin"></span> Saving…';
-  call("saveOpen",{payload:payload}).then(function(res){btn.disabled=false;btn.textContent="Save Opening (draft)";
+  var btn=$("submitBtn");btn.disabled=true;btn.innerHTML='<span class="spin"></span> '+t('saving');
+  call("saveOpen",{payload:payload}).then(function(res){btn.disabled=false;btn.textContent=t('submitOpen');
     if(res&&res.ok){showModal("✓ Opening saved","Saved <b>"+res.count+"</b> opening reading(s) for Dispenser "+S.du+", Shift "+S.shift+".<br><br>Come back this evening and choose CLOSING.");}
     else showModal("Save failed",(res&&res.error)||"unknown");
-  }).catch(function(e){btn.disabled=false;btn.textContent="Save Opening (draft)";showModal("Save failed",(e&&e.message)||e);});
+  }).catch(function(e){btn.disabled=false;btn.textContent=t('submitOpen');showModal("Save failed",(e&&e.message)||e);});
 }
 
 function submitClosing(){
   if(PREVIEW){ showModal("Preview only","This is a layout preview. Log in to actually submit."); return; }
   var rows=document.querySelectorAll("#closeNozzles .nozzle");
-  if(rows.length===0){$("formErr").textContent="Load your opening readings first.";return;}
+  if(rows.length===0){$("formErr").textContent=t('errLoadFirst');return;}
   var nozzles=[],bad=false,less=false;
   rows.forEach(function(d){var cl=d.querySelector('[data-f="closing"]').value;var op=parseFloat(d.dataset.opening)||0;
     if(cl===""){bad=true;return;}if(parseFloat(cl)<op)less=true;
     nozzles.push({key:d.dataset.key,nozzleNo:d.dataset.noz,product:d.dataset.prod,closing:parseFloat(cl),closingPhoto:d.dataset.closingPhoto||""});});
-  if(bad){$("formErr").textContent="Photograph every closing meter.";return;}
-  if(less){$("formErr").textContent="A closing is less than its opening — retake that photo.";return;}
-  if(!verifyState){$("formErr").textContent="Tap Verified / Not verified first.";return;}
+  if(bad){$("formErr").textContent=t('errPhotoAll');return;}
+  if(less){$("formErr").textContent=t('errClosingLess');return;}
+  if(!verifyState){$("formErr").textContent=t('errVerifyFirst');return;}
   $("formErr").textContent="";
   var payload={meta:{date:S.date,du:S.du,shift:S.shift,caName:S.caName},nozzles:nozzles,verification:verifyState};
-  var btn=$("submitBtn");btn.disabled=true;btn.innerHTML='<span class="spin"></span> Submitting…';
-  call("saveClose",{payload:payload}).then(function(res){btn.disabled=false;btn.textContent="Submit Closing";
+  var btn=$("submitBtn");btn.disabled=true;btn.innerHTML='<span class="spin"></span> '+t('submitting');
+  call("saveClose",{payload:payload}).then(function(res){btn.disabled=false;btn.textContent=t('submitClose');
     if(res&&res.ok){showModal("✓ Closing submitted","Saved <b>"+res.closed+"</b> closing reading(s). Your supervisor will review and finalise the DCR.");}
     else showModal("Submit failed",(res&&res.error)||"unknown");
-  }).catch(function(e){btn.disabled=false;btn.textContent="Submit Closing";showModal("Submit failed",(e&&e.message)||e);});
+  }).catch(function(e){btn.disabled=false;btn.textContent=t('submitClose');showModal("Submit failed",(e&&e.message)||e);});
 }
 $("loadOpen").addEventListener("click",loadOpenings);
 
@@ -837,7 +995,7 @@ function sessionSave_(u,p,res){
 function sessionClear_(){ try{ localStorage.removeItem('dcrCA'); }catch(e){} }
 function enterApp_(res){
   S.username=res.username;S.caName=res.name;S.role=res.role;
-  $("who").innerHTML='<span>'+res.name+'</span><span class="role-pill">'+(res.role||'CA').toUpperCase()+'</span><button id="logout" style="background:var(--field);border:1px solid var(--line);color:var(--ink);border-radius:6px;padding:4px 12px;font-size:12px;cursor:pointer;font-family:inherit">Log out</button>';
+  $("who").innerHTML='<span>'+res.name+'</span><span class="role-pill">'+(res.role||'CA').toUpperCase()+'</span><button id="logout" style="background:var(--field);border:1px solid var(--line);color:var(--ink);border-radius:6px;padding:4px 12px;font-size:12px;cursor:pointer;font-family:inherit">'+t('logOut')+'</button>';
   $("logout").onclick=function(){ sessionClear_(); stopNotifPoll_(); disarmExitGuard(); location.reload(); };
   $("loginScreen").classList.add("hide");$("app").classList.remove("hide");
   wireNotifNav_();
@@ -851,13 +1009,13 @@ function enterApp_(res){
     var sess=JSON.parse(localStorage.getItem('dcrCA')||'null');
     if(!sess||!sess.username||!sess.password) return;
     if((Date.now()-sess.ts)>12*60*60*1000){ sessionClear_(); return; }
-    var btn=$("loginBtn"); btn.disabled=true; btn.innerHTML='<span class="spin"></span> Restoring session…';
+    var btn=$("loginBtn"); btn.disabled=true; btn.innerHTML='<span class="spin"></span> '+t('restoring');
     call("login",{username:sess.username,password:sess.password}).then(function(res){
       if(res&&res.ok&&String(res.role).toUpperCase()==='CA'){
         sessionSave_(sess.username,sess.password,res);
         enterApp_(res);
-      } else { sessionClear_(); btn.disabled=false; btn.textContent='Log in'; }
-    }).catch(function(){ btn.disabled=false; btn.textContent='Log in'; sessionClear_(); });
+      } else { sessionClear_(); btn.disabled=false; btn.textContent=t('loginBtn'); }
+    }).catch(function(){ btn.disabled=false; btn.textContent=t('loginBtn'); sessionClear_(); });
   }catch(e){ sessionClear_(); }
 })();
 </script>
