@@ -311,11 +311,11 @@ tbody tr:hover{background:var(--field)}
           <table><thead><tr><th>Date</th><th>Net Qty</th><th>Sales Due</th><th>Collection</th><th>Short / Excess</th><th>Trend</th></tr></thead><tbody id="dailyBody"></tbody></table>
         </div>
         <div class="twocol">
-          <div class="pcard"><h3>CA Performance</h3>
-            <table><thead><tr><th>CA</th><th>Shifts</th><th>Net Qty</th><th>Sales Due</th><th>Collection</th><th>Short / Excess</th></tr></thead><tbody id="dashCAs"></tbody></table>
+          <div class="pcard"><h3>CSA Performance</h3>
+            <table><thead><tr><th>CSA</th><th>Shifts</th><th>Net Qty</th><th>Sales Due</th><th>Collection</th><th>Short / Excess</th></tr></thead><tbody id="dashCAs"></tbody></table>
           </div>
           <div class="pcard"><h3>Short / Excess Alerts</h3>
-            <table><thead><tr><th>Date</th><th>CA</th><th>Du</th><th>Amount</th></tr></thead><tbody id="dashAlerts"></tbody></table>
+            <table><thead><tr><th>Date</th><th>CSA</th><th>Du</th><th>Amount</th></tr></thead><tbody id="dashAlerts"></tbody></table>
           </div>
         </div>
         <div class="pcard" id="dashPackedCard" style="margin-top:12px;display:none">
@@ -337,10 +337,10 @@ tbody tr:hover{background:var(--field)}
         <div id="repFinNote" class="dashnote" style="display:none"></div>
         <div class="panel">
           <h3 style="margin:0 0 10px">Readings &mdash; <span id="repCAName"></span></h3>
-          <div class="tblscroll"><table id="readTable"><thead><tr><th>Dispenser/Nozzle</th><th>Product</th><th>Opening</th><th>Closing</th><th>Volume (L)</th><th>Nozzle Test (L)</th><th>Net Vol (L)</th><th>Rate</th><th>Value &#8377;</th><th>Photos</th><th>CA Verify</th></tr></thead><tbody id="readBody"></tbody></table></div>
+          <div class="tblscroll"><table id="readTable"><thead><tr><th>Dispenser/Nozzle</th><th>Product</th><th>Opening</th><th>Closing</th><th>Volume (L)</th><th>Nozzle Test (L)</th><th>Net Vol (L)</th><th>Rate</th><th>Value &#8377;</th><th>Photos</th><th>CSA Verify</th></tr></thead><tbody id="readBody"></tbody></table></div>
           <div class="tot big"><span>Sales Value Due</span><span id="dueVal">&#8377;0.00</span></div>
           <div id="editRow" style="margin-top:12px;display:flex;gap:10px;align-items:center;flex-wrap:wrap">
-            <button type="button" id="editReadingsBtn" style="padding:10px 16px;border-radius:10px;border:1px solid var(--line);background:#fff;font-weight:700;cursor:pointer">&#9999;&#65039; Edit CA readings</button>
+            <button type="button" id="editReadingsBtn" style="padding:10px 16px;border-radius:10px;border:1px solid var(--line);background:#fff;font-weight:700;cursor:pointer">&#9999;&#65039; Edit CSA readings</button>
             <span id="editHint" style="font-size:12px;color:var(--muted)">Override wrong Opening/Closing values. Nozzle Test stays supervisor-entered.</span>
           </div>
         </div>
@@ -371,10 +371,10 @@ tbody tr:hover{background:var(--field)}
             <tfoot><tr><td colspan="2" style="text-align:right;font-weight:700">Total</td><td id="denTot">0.00</td></tr></tfoot></table>
           <div class="tot" id="denMatchRow"><span>Denomination vs Cash collected</span><span id="denMatch">&mdash;</span></div>
         </div>
-        <button class="btn" id="finalizeBtn" style="width:100%">&#9989; Finalize DCR for this CA</button>
+        <button class="btn" id="finalizeBtn" style="width:100%">&#9989; Finalize DCR for this CSA</button>
         <div class="err" id="repErr" style="text-align:center"></div>
       </div>
-      <div id="repEmpty" style="color:var(--muted);font-size:14px">Pick a CA above to see their readings.</div>
+      <div id="repEmpty" style="color:var(--muted);font-size:14px">Pick a CSA above to see their readings.</div>
     </section>
 
     <!-- LOGS -->
@@ -382,7 +382,7 @@ tbody tr:hover{background:var(--field)}
       <h2 class="t">Login &amp; Activity Logs</h2>
       <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:14px">
         <div class="log-tabs" id="logTabs">
-          <button class="log-tab sel" data-log="ca">CA Logins</button>
+          <button class="log-tab sel" data-log="ca">CSA Logins</button>
           <button class="log-tab" data-log="sup">Supervisor Logs</button>
           <button class="log-tab" data-log="act">Activity Log</button>
         </div>
@@ -682,7 +682,7 @@ function renderReport_(res){
   REPORT_FINALIZED=!!(res&&res.finalized);
   var fin=REPORT_FINALIZED;
   $("repFinNote").style.display=fin?"":"none";
-  if(fin) $("repFinNote").textContent="This CA's DCR has been finalized. Showing saved data.";
+  if(fin) $("repFinNote").textContent="This CSA's DCR has been finalized. Showing saved data.";
   var tbody=$("readBody"); tbody.innerHTML="";
   var due=0;
   noz.forEach(function(n){
@@ -828,7 +828,7 @@ function sendInterim_(){
   var msgEl=$("intSendMsg");
   if(amt<=0){msgEl.style.color="var(--bad)";msgEl.textContent="Enter amount > 0.";return;}
   if(!by){msgEl.style.color="var(--bad)";msgEl.textContent="Enter who collected.";return;}
-  if(!S.pickedCA){msgEl.style.color="var(--bad)";msgEl.textContent="Pick a CA first.";return;}
+  if(!S.pickedCA){msgEl.style.color="var(--bad)";msgEl.textContent="Pick a CSA first.";return;}
   var btn=$("intSendBtn");btn.disabled=true;
   msgEl.style.color="var(--muted)";msgEl.textContent="Sending…";
   call("createInterimRequest",{date:$("repDate").value,shift:"",caName:S.pickedCA,supervisor:S.name||"",amount:amt,collectedBy:by})
@@ -875,7 +875,7 @@ function loadUsers_(){ call("getUsers",{}).then(function(res){ if(res&&res.ok) U
     if(!inputs.length) return;
     if(eb.dataset.on==="1"){
       [].forEach.call(inputs,function(i){i.readOnly=true;i.style.background="";i.style.borderColor="";});
-      eb.dataset.on=""; eb.textContent="✏️ Edit CA readings";
+      eb.dataset.on=""; eb.textContent="✏️ Edit CSA readings";
     } else {
       [].forEach.call(inputs,function(i){i.readOnly=false;i.style.background="#fff7e6";i.style.borderColor="var(--accent)";});
       eb.dataset.on="1"; eb.textContent="🔓 Editing on — values unlocked";
@@ -885,7 +885,7 @@ function loadUsers_(){ call("getUsers",{}).then(function(res){ if(res&&res.ok) U
 
 /* ---- FINALIZE ---- */
 $("finalizeBtn").onclick=function(){
-  if(!S.pickedCA){$("repErr").textContent="Pick a CA first.";return;}
+  if(!S.pickedCA){$("repErr").textContent="Pick a CSA first.";return;}
   var pending=INTERIM_STATUS.filter(function(r){return r.status==="PENDING";});
   if(pending.length && !window.confirm(pending.length+" interim request(s) still pending. Finalise anyway?")) return;
   var coll={},total=0;
@@ -913,10 +913,10 @@ $("finalizeBtn").onclick=function(){
   var payload={meta:{date:$("repDate").value,caName:S.pickedCA,shiftLeader:S.name||""},collection:coll,denomination:den,tests:tests,packedProducts:_packed,readingEdits:readingEdits,editNote:editNote};
   var b=$("finalizeBtn");b.disabled=true;b.innerHTML='<span class="spin"></span> Finalising…';$("repErr").textContent="";
   call("finalizeDCR",{payload:payload}).then(function(res){
-    b.disabled=false;b.textContent="✅ Finalize DCR for this CA";
+    b.disabled=false;b.textContent="✅ Finalize DCR for this CSA";
     if(res&&res.ok){msg("✓ DCR finalised","Wrote <b>"+res.rows+"</b> row(s) for "+S.pickedCA+".<br>Sales Due "+money(res.salesValueDue)+" · Collection "+money(res.totalCollection)+" · Short/Excess "+money(res.shortExcess));pickCA(S.pickedCA,document.querySelector("#caList button.sel"));}
     else msg("Could not finalise",(res&&res.error)||"unknown");
-  }).catch(function(e){b.disabled=false;b.textContent="✅ Finalize DCR for this CA";$("repErr").textContent=(e&&e.message)||e;});
+  }).catch(function(e){b.disabled=false;b.textContent="✅ Finalize DCR for this CSA";$("repErr").textContent=(e&&e.message)||e;});
 };
 
 /* ---- LOGS ---- */
@@ -945,8 +945,8 @@ function renderLogs(){
   var html="";
   if(CUR_LOG_TAB==="ca"){
     var rows=ADMIN_LOGS.caLogs;
-    html='<table><thead><tr><th>Date</th><th>Time</th><th>CA Name</th><th>Username</th></tr></thead><tbody>';
-    if(!rows.length) html+=emptyRow(4,"No CA login records yet.");
+    html='<table><thead><tr><th>Date</th><th>Time</th><th>CSA Name</th><th>Username</th></tr></thead><tbody>';
+    if(!rows.length) html+=emptyRow(4,"No CSA login records yet.");
     else rows.forEach(function(r){html+='<tr><td>'+esc(r.date)+'</td><td>'+esc(r.time)+'</td><td>'+esc(r.name)+'</td><td>'+esc(r.username)+'</td></tr>';});
     html+='</tbody></table>';
   } else if(CUR_LOG_TAB==="sup"){

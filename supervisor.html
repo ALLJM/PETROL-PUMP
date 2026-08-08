@@ -366,7 +366,7 @@ video.vprev{width:100%;max-width:380px;border-radius:var(--r-input);border:1px s
   <div class="custom-cal" id="allocDateCal"></div>
 </div>
 <input type="hidden" id="allocDate"></div>
-        <div class="hint" style="color:var(--muted);font-size:13px;align-self:center">Tap a dispenser to assign a CA for the day.</div>
+        <div class="hint" style="color:var(--muted);font-size:13px;align-self:center">Tap a dispenser to assign a CSA for the day.</div>
       </div>
       <div class="dispgrid" id="dispGrid"></div>
     </section>
@@ -383,7 +383,7 @@ video.vprev{width:100%;max-width:380px;border-radius:var(--r-input);border:1px s
         <div style="height:14px"></div>
         <button class="btn" id="saveRates" style="width:auto">Set &amp; Lock Rates</button>
         <span id="rateMsg" class="ok" style="margin-left:12px"></span>
-        <p class="hint" style="color:var(--muted);font-size:12px;margin-top:10px">These rates apply to every CA's sales value. The CA app never shows or changes rates.</p>
+        <p class="hint" style="color:var(--muted);font-size:12px;margin-top:10px">These rates apply to every CSA's sales value. The CSA app never shows or changes rates.</p>
       </div>
     </section>
 
@@ -405,11 +405,11 @@ video.vprev{width:100%;max-width:380px;border-radius:var(--r-input);border:1px s
         <div id="repFinNote" class="dashnote" style="display:none"></div>
         <div class="panel">
           <h3 style="margin:0 0 10px">Readings — <span id="repCAName"></span></h3>
-          <div class="tblscroll"><table id="readTable"><thead><tr><th>Dispenser/Nozzle</th><th>Product</th><th>Opening</th><th>Closing</th><th>Volume (L)</th><th>Nozzle Test (L)</th><th>Net Vol (L)</th><th>Rate</th><th>Value ₹</th><th>Photos</th><th>CA Verify</th></tr></thead><tbody id="readBody"></tbody></table></div>
+          <div class="tblscroll"><table id="readTable"><thead><tr><th>Dispenser/Nozzle</th><th>Product</th><th>Opening</th><th>Closing</th><th>Volume (L)</th><th>Nozzle Test (L)</th><th>Net Vol (L)</th><th>Rate</th><th>Value ₹</th><th>Photos</th><th>CSA Verify</th></tr></thead><tbody id="readBody"></tbody></table></div>
           <div class="tot big"><span>Sales Value Due</span><span id="dueVal">₹0.00</span></div>
           <div id="editRow" style="margin-top:12px;display:flex;gap:10px;align-items:center;flex-wrap:wrap">
-            <button type="button" id="editReadingsBtn" style="padding:10px 16px;border-radius:10px;border:1px solid var(--line,#ccc);background:#fff;font-weight:700;cursor:pointer">✏️ Edit CA readings</button>
-            <span id="editHint" style="font-size:12px;color:var(--muted)">Override wrong Opening/Closing values uploaded by the CA. Nozzle Test stays supervisor-entered.</span>
+            <button type="button" id="editReadingsBtn" style="padding:10px 16px;border-radius:10px;border:1px solid var(--line,#ccc);background:#fff;font-weight:700;cursor:pointer">✏️ Edit CSA readings</button>
+            <span id="editHint" style="font-size:12px;color:var(--muted)">Override wrong Opening/Closing values uploaded by the CSA. Nozzle Test stays supervisor-entered.</span>
           </div>
         </div>
 
@@ -445,10 +445,10 @@ video.vprev{width:100%;max-width:380px;border-radius:var(--r-input);border:1px s
           <div class="tot" id="denMatchRow"><span>Denomination vs Cash collected</span><span id="denMatch">—</span></div>
         </div>
 
-        <button class="btn" id="finalizeBtn" style="width:100%">✅ Finalize DCR for this CA</button>
+        <button class="btn" id="finalizeBtn" style="width:100%">✅ Finalize DCR for this CSA</button>
         <div class="err" id="repErr" style="text-align:center"></div>
       </div>
-      <div id="repEmpty" class="hint" style="color:var(--muted)">Pick a CA above to see their readings and enter the cash.</div>
+      <div id="repEmpty" class="hint" style="color:var(--muted)">Pick a CSA above to see their readings and enter the cash.</div>
     </section>
 
     <!-- DASHBOARD -->
@@ -527,11 +527,11 @@ video.vprev{width:100%;max-width:380px;border-radius:var(--r-input);border:1px s
         </div>
 
         <div class="twocol">
-          <div class="pcard"><h3>CA Performance</h3>
-            <table><thead><tr><th>CA</th><th>Shifts</th><th>Net Qty</th><th>Sales Due</th><th>Collection</th><th>Short / Excess</th></tr></thead><tbody id="dashCAs"></tbody></table>
+          <div class="pcard"><h3>CSA Performance</h3>
+            <table><thead><tr><th>CSA</th><th>Shifts</th><th>Net Qty</th><th>Sales Due</th><th>Collection</th><th>Short / Excess</th></tr></thead><tbody id="dashCAs"></tbody></table>
           </div>
           <div class="pcard"><h3>Short / Excess Alerts</h3>
-            <table><thead><tr><th>Date</th><th>CA</th><th>Du</th><th>Amount</th></tr></thead><tbody id="dashAlerts"></tbody></table>
+            <table><thead><tr><th>Date</th><th>CSA</th><th>Du</th><th>Amount</th></tr></thead><tbody id="dashAlerts"></tbody></table>
           </div>
         </div>
 
@@ -645,13 +645,13 @@ video.vprev{width:100%;max-width:380px;border-radius:var(--r-input);border:1px s
       <!-- Comparison table -->
       <div class="panel" style="margin-top:16px">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:10px">
-          <h3 style="margin:0;font-size:15px;font-weight:800">Comparison — Supervisor vs CA</h3>
+          <h3 style="margin:0;font-size:15px;font-weight:800">Comparison — Supervisor vs CSA</h3>
           <button class="btn sec" id="vRefreshComp" style="padding:8px 14px;font-size:13px">&#8635; Refresh</button>
         </div>
         <div id="vCompErr" class="err"></div>
         <div class="tblscroll">
           <table id="vCompTable">
-            <thead><tr><th>Du</th><th>N</th><th>Product</th><th>Type</th><th>Sup Reading</th><th>Sup Time</th><th>CA Reading</th><th>CA Time</th><th>CA Name</th><th>Match</th></tr></thead>
+            <thead><tr><th>Du</th><th>N</th><th>Product</th><th>Type</th><th>Sup Reading</th><th>Sup Time</th><th>CSA Reading</th><th>CSA Time</th><th>CSA Name</th><th>Match</th></tr></thead>
             <tbody id="vCompBody"><tr><td colspan="10" style="color:var(--muted)">No data yet.</td></tr></tbody>
           </table>
         </div>
@@ -741,7 +741,7 @@ function doLogin(){
   call("login",{username:u,password:p}).then(function(res){
     b.disabled=false;b.textContent="Log in";
     if(!res||!res.ok){$("loginErr").textContent=(res&&res.error)||"Login failed";return;}
-    if(String(res.role).toUpperCase()!=="SUPERVISOR"){$("loginErr").textContent="This is the Supervisor app. CA accounts cannot log in here.";return;}
+    if(String(res.role).toUpperCase()!=="SUPERVISOR"){$("loginErr").textContent="This is the Supervisor app. CSA accounts cannot log in here.";return;}
     sessionSave_(u,p,res);
     enterApp_(res);
   }).catch(function(e){b.disabled=false;b.textContent="Log in";$("loginErr").textContent="Network error: "+(e&&e.message?e.message:e);});
@@ -827,7 +827,7 @@ function drawDisp_(map, readings){
 function clearAlloc(du,side){
   var who="";
   (S.allocs||[]).forEach(function(a){ if(String(a.du)===String(du) && String(a.side).toUpperCase()===String(side).toUpperCase()) who=a.caName; });
-  if(!window.confirm("Clear "+(who?who+"\u2019s ":"")+"allocation on Dispenser "+du+" (Side "+side+")?\nThe CA will no longer see this shift in their app.")) return;
+  if(!window.confirm("Clear "+(who?who+"\u2019s ":"")+"allocation on Dispenser "+du+" (Side "+side+")?\nThe CSA will no longer see this shift in their app.")) return;
   call("clearAllocation",{date:$("allocDate").value,du:du,side:side}).then(function(res){
     if(res&&res.ok===false){ msg("Could not clear", res.error||"unknown"); return; }
     renderDispensers();
@@ -861,7 +861,7 @@ function openAlloc(du,sides){
   $("aCAA").innerHTML=opts;$("aCAB").innerHTML=opts;
   var A=sides.A,B=sides.B;
   if(cng){
-    $("aLabA").innerHTML="CA — both CNG nozzles (N1 &amp; N2)";
+    $("aLabA").innerHTML="CSA — both CNG nozzles (N1 &amp; N2)";
     $("aLabB").parentNode.style.display="none";
     $("aCAA").value=A?A.caName:"";
   }else{
@@ -884,7 +884,7 @@ $("aSave").onclick=function(){
     if(caA && an===caA.trim().toLowerCase()) conflict=conflict||(caA+" is already on Dispenser "+a.du);
     if(caB && an===caB.trim().toLowerCase()) conflict=conflict||(caB+" is already on Dispenser "+a.du);
   }});
-  if(conflict){$("aErr").textContent=conflict+". A CA can be at only one dispenser per day.";return;}
+  if(conflict){$("aErr").textContent=conflict+". A CSA can be at only one dispenser per day.";return;}
   var b=$("aSave");b.disabled=true;b.innerHTML='<span class="spin"></span> Saving…';
   var calls=[];
   if(caA)calls.push(call("saveAllocation",{date:$("allocDate").value,du:du,side:"A",shift:shift,caName:caA,shiftLeader:leader}));
@@ -1016,7 +1016,7 @@ function renderDashboard(d){
   /* hero cards */
   $("hSalesBadge").textContent=(PRESET_TAG[CUR_PRESET]||"Range");
   $("dashNote").style.display=(shifts===0?"":"none");
-  if(shifts===0)$("dashNote").textContent="No finalized data for this period yet. Pick another date or range, or finalize a CA\u2019s DCR to populate it.";
+  if(shifts===0)$("dashNote").textContent="No finalized data for this period yet. Pick another date or range, or finalize a CSA\u2019s DCR to populate it.";
   $("hSales").textContent=money(sales);
   $("hColl").textContent=money(coll);
   $("hDiff").textContent=signedMoney(se);
@@ -1129,7 +1129,7 @@ function renderReport_(res){
   var noz=(res&&res.nozzles)||[];
   REPORT_FINALIZED=!!(res&&res.finalized);
   var tb=$("readBody");tb.innerHTML="";
-  if(noz.length===0){tb.innerHTML='<tr><td colspan="11" style="color:var(--muted)">No readings for this CA on this date.</td></tr>';}
+  if(noz.length===0){tb.innerHTML='<tr><td colspan="11" style="color:var(--muted)">No readings for this CSA on this date.</td></tr>';}
   noz.forEach(function(n){
     var net=(n.net!=null?n.net:n.volume);
     var ph=(n.openingPhoto?'<a class="ph" href="'+n.openingPhoto+'" target="_blank">Open</a>':'')+(n.closingPhoto?' <a class="ph" href="'+n.closingPhoto+'" target="_blank">Close</a>':'');
@@ -1151,8 +1151,8 @@ function renderReport_(res){
 function applyFinalizedState(res){
   var fin=!!(res&&res.finalized), c=(res&&res.collection)||null, d=(res&&res.denomination)||null, its=(res&&res.interim)||[];
   var er=$("editRow"); if(er) er.style.display=fin?"none":"";
-  var eb0=$("editReadingsBtn"); if(eb0){ eb0.disabled=fin; eb0.dataset.on=""; eb0.textContent="✏️ Edit CA readings"; }
-  var eh0=$("editHint"); if(eh0) eh0.textContent="Override wrong Opening/Closing values uploaded by the CA. Nozzle Test stays supervisor-entered.";
+  var eb0=$("editReadingsBtn"); if(eb0){ eb0.disabled=fin; eb0.dataset.on=""; eb0.textContent="✏️ Edit CSA readings"; }
+  var eh0=$("editHint"); if(eh0) eh0.textContent="Override wrong Opening/Closing values uploaded by the CSA. Nozzle Test stays supervisor-entered.";
   COLL.forEach(function(cc){ var el=document.querySelector('.coll[data-f="'+cc[0]+'"]'); if(!el)return;
     el.value=(fin&&c)?(c[cc[0]]||0):""; el.readOnly=fin; });
   DEN.forEach(function(x){ var el=document.querySelector('.dcount[data-d="'+x+'"]'); if(el){ el.value=(fin&&d)?(d["n"+x]||""):""; el.readOnly=fin; } });
@@ -1160,7 +1160,7 @@ function applyFinalizedState(res){
   if($("coinAmt")){ $("coinAmt").value=(fin&&d)?(d.coins||""):""; $("coinAmt").readOnly=fin; }
   /* interim form — hide when finalized; status list always shown via polling */
   var intF=$("intForm"); if(intF) intF.style.display=fin?"none":"";
-  var fb=$("finalizeBtn"); if(fb){ fb.disabled=fin; fb.textContent=fin?"\u2713 Already finalized (view only)":"\u2705 Finalize DCR for this CA"; }
+  var fb=$("finalizeBtn"); if(fb){ fb.disabled=fin; fb.textContent=fin?"\u2713 Already finalized (view only)":"\u2705 Finalize DCR for this CSA"; }
   var nb=$("repFinNote"); if(nb){ nb.style.display=fin?"":"none"; if(fin) nb.textContent="This shift is already finalized \u2014 showing the saved values from the Google Sheet (view only)."; }
   recalcColl();
 }
@@ -1217,7 +1217,7 @@ function sendInterim_(){
   var msg=$("intSendMsg");
   if(amt<=0){ msg.style.color="var(--bad)"; msg.textContent="Enter an amount greater than 0."; return; }
   if(!by){ msg.style.color="var(--bad)"; msg.textContent="Enter who collected the cash."; return; }
-  if(!S.pickedCA){ msg.style.color="var(--bad)"; msg.textContent="Pick a CA first."; return; }
+  if(!S.pickedCA){ msg.style.color="var(--bad)"; msg.textContent="Pick a CSA first."; return; }
   var btn=$("intSendBtn"); btn.disabled=true;
   msg.style.color="var(--muted)"; msg.textContent="Sending…";
   var sess={}; try{ sess=JSON.parse(localStorage.getItem('dcrSup')||'{}'); }catch(e){}
@@ -1225,7 +1225,7 @@ function sendInterim_(){
     .then(function(res){
       btn.disabled=false;
       if(res&&res.ok){
-        msg.style.color="var(--good)"; msg.textContent="✓ Sent — waiting for CA to verify.";
+        msg.style.color="var(--good)"; msg.textContent="✓ Sent — waiting for CSA to verify.";
         $("intAmtNew").value=""; $("intByNew").value="";
         refreshInterimStatus_();
       } else {
@@ -1238,12 +1238,12 @@ function renderInterimStatus_(requests){
   INTERIM_STATUS=requests||[];
   var list=$("intStatusList"); list.innerHTML="";
   if(!requests||!requests.length){
-    list.innerHTML='<div class="hint" style="color:var(--muted);font-size:12px;margin-bottom:8px">No interim entries yet for this CA today.</div>';
+    list.innerHTML='<div class="hint" style="color:var(--muted);font-size:12px;margin-bottom:8px">No interim entries yet for this CSA today.</div>';
   } else {
     requests.forEach(function(r){
       var chipClass=r.status==="APPROVED"?"chip-approved":(r.status==="REJECTED"?"chip-rejected":"chip-pending");
-      var chipLabel=r.status==="APPROVED"?"✅ Approved":(r.status==="REJECTED"?"❌ Rejected":"🟡 Pending CA");
-      var noteHtml=r.caNote?'<div style="font-size:11px;color:var(--bad);margin-top:2px">CA note: '+r.caNote+'</div>':"";
+      var chipLabel=r.status==="APPROVED"?"✅ Approved":(r.status==="REJECTED"?"❌ Rejected":"🟡 Pending CSA");
+      var noteHtml=r.caNote?'<div style="font-size:11px;color:var(--bad);margin-top:2px">CSA note: '+r.caNote+'</div>':"";
       var row=document.createElement("div"); row.className="int-row";
       row.innerHTML='<div class="int-info"><div class="int-amt">₹'+num(r.amount)+'</div><div class="int-by">Collected by: '+r.collectedBy+' &nbsp;·&nbsp; Sent by: '+r.supervisor+'</div>'+noteHtml+'</div><span class="chip '+chipClass+'">'+chipLabel+'</span>';
       list.appendChild(row);
@@ -1301,8 +1301,8 @@ function setMatch(valId,rowId,amount,cash){
     if(!inputs.length) return;
     if(eb.dataset.on==="1"){
       [].forEach.call(inputs,function(i){ i.readOnly=true; i.style.background=""; i.style.borderColor=""; });
-      eb.dataset.on=""; eb.textContent="✏️ Edit CA readings";
-      var eh=$("editHint"); if(eh) eh.textContent="Override wrong Opening/Closing values uploaded by the CA. Nozzle Test stays supervisor-entered.";
+      eb.dataset.on=""; eb.textContent="✏️ Edit CSA readings";
+      var eh=$("editHint"); if(eh) eh.textContent="Override wrong Opening/Closing values uploaded by the CSA. Nozzle Test stays supervisor-entered.";
     } else {
       [].forEach.call(inputs,function(i){ i.readOnly=false; i.style.background="#fff7e6"; i.style.borderColor="var(--accent,#f5a623)"; });
       eb.dataset.on="1"; eb.textContent="🔓 Editing on — values unlocked";
@@ -1312,7 +1312,7 @@ function setMatch(valId,rowId,amount,cash){
 })();
 $("finalizeBtn").onclick=function(){
   if(PREVIEW){msg("Preview only","Log in to actually finalise the DCR.");return;}
-  if(!S.pickedCA){$("repErr").textContent="Pick a CA first.";return;}
+  if(!S.pickedCA){$("repErr").textContent="Pick a CSA first.";return;}
   var cashChk=evalSum(document.querySelector('.coll[data-f="cash"]').value)||0;
   var denChk=0;DEN.forEach(function(x){denChk+=x*(parseInt(document.querySelector('.dcount[data-d="'+x+'"]').value)||0);});denChk+=parseFloat($("coinAmt").value)||0;
   var intChk=0; INTERIM_STATUS.forEach(function(r){ if(r.status==="APPROVED") intChk+=r.amount; });
@@ -1320,7 +1320,7 @@ $("finalizeBtn").onclick=function(){
   var warns=[];
   if(Math.abs(round2(denChk-cashChk))>=0.005) warns.push("Denomination "+money(denChk)+" does not match Cash "+money(cashChk));
   if(Math.abs(round2(intChk-cashChk))>=0.005) warns.push("Interim (approved) "+money(intChk)+" does not match Cash "+money(cashChk));
-  if(pending.length) warns.push(pending.length+" interim request(s) still pending CA approval");
+  if(pending.length) warns.push(pending.length+" interim request(s) still pending CSA approval");
   if(warns.length && !window.confirm("Cash does not tally:\n- "+warns.join("\n- ")+"\n\nFinalise anyway?")) return;
   var coll={},total=0;COLL.forEach(function(c){var v=round2(evalSum(document.querySelector('.coll[data-f="'+c[0]+'"]').value));coll[c[0]]=v;total+=v;});coll.total=round2(total);
   var den={total:0,notes:{}},dt=0;DEN.forEach(function(x){var c=parseInt(document.querySelector('.dcount[data-d="'+x+'"]').value)||0;den.notes["n"+x]={count:c,amount:round2(x*c)};dt+=x*c;});
@@ -1338,15 +1338,15 @@ $("finalizeBtn").onclick=function(){
   });
   var editNote="";
   if(anyEdit){
-    var why=window.prompt("You changed one or more CA-uploaded readings.\nWhy did you edit them? (leave blank to use the default note)","");
+    var why=window.prompt("You changed one or more CSA-uploaded readings.\nWhy did you edit them? (leave blank to use the default note)","");
     editNote=(why&&why.trim())?why.trim():"These readings have been edited by the supervisor.";
   }
   var payload={meta:{date:$("repDate").value,caName:S.pickedCA,shiftLeader:S.name||""},collection:coll,denomination:den,tests:tests,packedProducts:_packed,readingEdits:readingEdits,editNote:editNote};
   var b=$("finalizeBtn");b.disabled=true;b.innerHTML='<span class="spin"></span> Finalising…';$("repErr").textContent="";
-  call("finalizeDCR",{payload:payload}).then(function(res){b.disabled=false;b.textContent="✅ Finalize DCR for this CA";
+  call("finalizeDCR",{payload:payload}).then(function(res){b.disabled=false;b.textContent="✅ Finalize DCR for this CSA";
     if(res&&res.ok){msg("✓ DCR finalised","Wrote <b>"+res.rows+"</b> nozzle row(s) for "+S.pickedCA+".<br>Sales Due "+money(res.salesValueDue)+" · Collection "+money(res.totalCollection)+" · Short/Excess "+money(res.shortExcess));pickCA(S.pickedCA,document.querySelector("#caList button.sel"));}
     else msg("Could not finalise",(res&&res.error)||"unknown");
-  }).catch(function(e){b.disabled=false;b.textContent="✅ Finalize DCR for this CA";$("repErr").textContent=(e&&e.message)||e;});
+  }).catch(function(e){b.disabled=false;b.textContent="✅ Finalize DCR for this CSA";$("repErr").textContent=(e&&e.message)||e;});
 };
 
 
@@ -1741,7 +1741,7 @@ function vNozzlePhotoPreview(input, msgId){
   var el=$(msgId); if(el) el.textContent='✓ Photo taken';
 }
 
-/* live camera modal — same orange-box experience as CA app */
+/* live camera modal — same orange-box experience as CSA app */
 function supLiveCapture(){
   return new Promise(function(resolve){
     if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){ resolve(null); return; }
